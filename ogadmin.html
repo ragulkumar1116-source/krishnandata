@@ -11,18 +11,11 @@
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-        }
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
@@ -41,15 +34,11 @@
             margin-bottom: 16px;
             font-size: 15px;
             transition: all 0.2s;
-            background: white;
         }
         .input-field:focus {
             border-color: #3b82f6;
             outline: none;
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-        }
-        .input-field.plain {
-            padding-left: 16px;
         }
         .btn-primary {
             width: 100%;
@@ -72,9 +61,6 @@
         .btn-success {
             background: linear-gradient(135deg, #10b981, #059669);
         }
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
         .loading-spinner {
             border: 2px solid rgba(255,255,255,0.3);
             border-top: 2px solid white;
@@ -84,7 +70,6 @@
             animation: spin 1s linear infinite;
             display: inline-block;
             margin-left: 8px;
-            vertical-align: middle;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -99,8 +84,7 @@
         }
         .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
         .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-        .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
         .input-icon {
             position: absolute;
             left: 16px;
@@ -119,36 +103,8 @@
             align-items: center;
             gap: 4px;
             margin-bottom: 20px;
-            font-weight: 600;
         }
         .back-link:hover { text-decoration: underline; }
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 24px;
-        }
-        .step-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #e2e8f0;
-            transition: all 0.3s;
-        }
-        .step-dot.active {
-            background: #3b82f6;
-            transform: scale(1.2);
-        }
-        .step-dot.completed {
-            background: #10b981;
-        }
-        .security-icon {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
     </style>
 </head>
 <body>
@@ -157,7 +113,7 @@
         <!-- LOGIN FORM -->
         <div id="loginView">
             <div class="text-center mb-8">
-                <div class="bg-blue-600 p-4 rounded-2xl text-white inline-block mb-4 shadow-lg shadow-blue-600/30">
+                <div class="bg-blue-600 p-4 rounded-2xl text-white inline-block mb-4 shadow-lg">
                     <i data-lucide="shield-check" class="w-8 h-8"></i>
                 </div>
                 <h1 class="text-2xl font-black text-slate-900">FleetSync Pro</h1>
@@ -169,12 +125,12 @@
             <form id="loginForm">
                 <div class="input-wrapper">
                     <i data-lucide="user" class="input-icon w-5 h-5"></i>
-                    <input type="text" id="username" class="input-field" placeholder="Username or Email" required autocomplete="username">
+                    <input type="text" id="username" class="input-field" placeholder="Username" required>
                 </div>
                 
                 <div class="input-wrapper">
                     <i data-lucide="lock" class="input-icon w-5 h-5"></i>
-                    <input type="password" id="password" class="input-field" placeholder="Password" required autocomplete="current-password">
+                    <input type="password" id="password" class="input-field" placeholder="Password" required>
                 </div>
 
                 <div class="flex justify-between items-center mb-6">
@@ -196,8 +152,7 @@
                     Don't have an account? <a href="register.html" class="text-blue-600 font-bold hover:underline">Request Access</a>
                 </p>
                 <div class="flex items-center justify-center gap-4 mt-4 text-xs text-slate-400">
-                    <span class="flex items-center gap-1"><i data-lucide="shield" class="w-3 h-3"></i> 256-bit SSL</span>
-                    <span class="flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> Secure Access</span>
+                    <span class="flex items-center gap-1"><i data-lucide="shield" class="w-3 h-3"></i> Secure Access</span>
                 </div>
             </div>
         </div>
@@ -208,92 +163,56 @@
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Login
             </span>
 
-            <div class="text-center mb-4">
-                <div class="bg-amber-500 p-3 rounded-2xl text-white inline-block mb-3 shadow-lg security-icon">
-                    <i data-lucide="shield-question" class="w-6 h-6"></i>
+            <div class="text-center mb-8">
+                <div class="bg-amber-500 p-4 rounded-2xl text-white inline-block mb-4 shadow-lg">
+                    <i data-lucide="key" class="w-8 h-8"></i>
                 </div>
-                <h2 class="text-xl font-bold text-slate-900">Password Recovery</h2>
-                <p class="text-slate-500 text-sm mt-1">Answer your security question</p>
+                <h2 class="text-2xl font-bold text-slate-900">Reset Password</h2>
+                <p class="text-slate-500 text-sm mt-2">Enter your username to reset</p>
             </div>
 
-            <!-- Step Progress -->
-            <div class="step-indicator" id="stepIndicator">
-                <div class="step-dot active" id="step1"></div>
-                <div class="step-dot" id="step2"></div>
-                <div class="step-dot" id="step3"></div>
-            </div>
+            <div id="forgotAlert" class="hidden alert"></div>
 
-            <div id="forgotAlert" class="hidden alert mb-4"></div>
-
-            <!-- STEP 1: Enter Username -->
+            <!-- Step 1: Enter Username -->
             <div id="forgotStep1">
                 <form id="forgotForm1">
-                    <div class="input-wrapper mb-4">
+                    <div class="input-wrapper">
                         <i data-lucide="user" class="input-icon w-5 h-5"></i>
-                        <input type="text" id="forgotUsername" class="input-field" placeholder="Enter your username" required autocomplete="off">
+                        <input type="text" id="forgotUsername" class="input-field" placeholder="Enter your username" required>
                     </div>
                     <button type="submit" class="btn-primary" id="forgotBtn1">
-                        <span id="forgotBtnText1">Continue</span>
+                        <span id="forgotBtnText1">Find Account</span>
                         <span id="forgotLoader1" class="loading-spinner hidden"></span>
                     </button>
                 </form>
             </div>
 
-            <!-- STEP 2: Answer Security Question -->
+            <!-- Step 2: Security Verification (Optional) or Direct Reset for Admin -->
             <div id="forgotStep2" class="hidden">
-                <div class="p-4 bg-amber-50 rounded-lg mb-4 border border-amber-200">
-                    <p class="text-xs text-amber-600 font-bold uppercase mb-2 flex items-center gap-1">
-                        <i data-lucide="help-circle" class="w-3 h-3"></i>
-                        Security Question:
-                    </p>
-                    <p class="text-sm text-amber-900 font-semibold" id="securityQuestionDisplay">Loading...</p>
+                <div class="p-4 bg-blue-50 rounded-lg mb-4 border border-blue-200">
+                    <p class="text-sm text-blue-800 font-semibold mb-1">Account Found:</p>
+                    <p class="text-sm text-blue-600" id="foundUserDisplay">Loading...</p>
                 </div>
 
                 <form id="forgotForm2">
-                    <div class="input-wrapper mb-2">
-                        <i data-lucide="message-square" class="input-icon w-5 h-5"></i>
-                        <input type="text" id="securityAnswer" class="input-field" placeholder="Your answer" required autocomplete="off">
-                    </div>
-                    <p class="text-xs text-slate-500 mb-4 ml-1">Answer is case-insensitive. Spaces will be ignored.</p>
+                    <p class="text-sm text-slate-600 mb-3">Enter new password (min 4 characters):</p>
+                    <input type="password" id="newPassword" class="input-field !pl-4" placeholder="New Password" required minlength="4">
+                    <input type="password" id="confirmNewPassword" class="input-field !pl-4" placeholder="Confirm New Password" required>
                     
-                    <div class="flex gap-3">
-                        <button type="button" onclick="backToStep1()" class="flex-1 btn-secondary py-3 rounded-xl font-bold text-white">
-                            Back
-                        </button>
-                        <button type="submit" class="flex-[2] btn-success py-3 rounded-xl font-bold text-white" id="forgotBtn2">
-                            <span id="forgotBtnText2">Verify</span>
-                            <span id="forgotLoader2" class="loading-spinner hidden"></span>
-                        </button>
-                    </div>
-                </form>
-                <p class="text-xs text-center mt-3 text-slate-500" id="attemptsLeft"></p>
-            </div>
-
-            <!-- STEP 3: Set New Password -->
-            <div id="forgotStep3" class="hidden">
-                <div class="p-4 bg-emerald-50 rounded-lg mb-4 border border-emerald-200 flex items-center gap-2">
-                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
-                    <p class="text-emerald-700 text-sm font-semibold">Identity Verified</p>
-                </div>
-
-                <form id="forgotForm3">
-                    <input type="password" id="newPassword" class="input-field plain mb-3" placeholder="New Password (min 4 chars)" required minlength="4">
-                    <input type="password" id="confirmNewPassword" class="input-field plain mb-4" placeholder="Confirm New Password" required>
-                    
-                    <button type="submit" class="btn-primary" id="forgotBtn3">
-                        <span id="forgotBtnText3">Update Password</span>
-                        <span id="forgotLoader3" class="loading-spinner hidden"></span>
+                    <button type="submit" class="btn-primary btn-success" id="forgotBtn2">
+                        <span id="forgotBtnText2">Update Password</span>
+                        <span id="forgotLoader2" class="loading-spinner hidden"></span>
                     </button>
                 </form>
             </div>
 
-            <!-- STEP 4: Success -->
-            <div id="forgotStep4" class="hidden text-center py-6">
+            <!-- Step 3: Success -->
+            <div id="forgotStep3" class="hidden text-center py-8">
                 <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="check" class="w-8 h-8"></i>
                 </div>
-                <h3 class="text-lg font-bold text-slate-900 mb-2">Reset Complete!</h3>
-                <p class="text-slate-600 mb-6 text-sm">Your password has been updated successfully.</p>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Password Updated!</h3>
+                <p class="text-slate-600 mb-6 text-sm">Your password has been reset successfully.</p>
                 <button onclick="showLogin()" class="btn-primary">Return to Login</button>
             </div>
         </div>
@@ -315,8 +234,6 @@
 
         let resetUserKey = null;
         let resetUserData = null;
-        let securityAttempts = 0;
-        const MAX_ATTEMPTS = 3;
 
         // Create default admin if none exists
         async function initDefaultAdmin() {
@@ -332,15 +249,12 @@
                         role: "admin",
                         status: "active",
                         email: "admin@fleetsync.pro",
-                        securityQuestion: "What is the default admin password?",
-                        securityAnswer: "admin123",
                         createdAt: new Date().toISOString(),
-                        lastLogin: null
+                        lastLogin: null,
+                        allowPasswordReset: true
                     };
                     await set(ref(db, 'app_users/admin'), defaultAdmin);
                     console.log("Default admin created: admin/admin123");
-                    console.log("Security Question: What is the default admin password?");
-                    console.log("Security Answer: admin123");
                 }
             } catch (e) {
                 console.error("Init error:", e);
@@ -360,199 +274,22 @@
             document.getElementById(elementId).classList.add('hidden');
         }
 
-        function updateStepIndicator(step) {
-            document.querySelectorAll('.step-dot').forEach((dot, idx) => {
-                dot.classList.remove('active', 'completed');
-                if (idx < step - 1) dot.classList.add('completed');
-                if (idx === step - 1) dot.classList.add('active');
-            });
-        }
-
         window.showLogin = () => {
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('forgotView').classList.add('hidden');
             hideAlert();
             hideAlert('forgotAlert');
-            // Reset forms
-            document.getElementById('loginForm').reset();
         };
 
         window.showForgotPassword = () => {
             document.getElementById('loginView').classList.add('hidden');
             document.getElementById('forgotView').classList.remove('hidden');
-            
-            // Reset to step 1
             document.getElementById('forgotStep1').classList.remove('hidden');
             document.getElementById('forgotStep2').classList.add('hidden');
             document.getElementById('forgotStep3').classList.add('hidden');
-            document.getElementById('forgotStep4').classList.add('hidden');
-            document.getElementById('forgotForm1').reset();
-            document.getElementById('forgotForm2').reset();
-            document.getElementById('forgotForm3').reset();
-            
-            updateStepIndicator(1);
-            securityAttempts = 0;
-            hideAlert('forgotAlert');
+            document.getElementById('forgotUsername').value = '';
+            hideAlert();
         };
-
-        window.backToStep1 = () => {
-            document.getElementById('forgotStep2').classList.add('hidden');
-            document.getElementById('forgotStep1').classList.remove('hidden');
-            updateStepIndicator(1);
-            hideAlert('forgotAlert');
-        };
-
-        // STEP 1: Find User
-        document.getElementById('forgotForm1').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('forgotBtn1');
-            const btnText = document.getElementById('forgotBtnText1');
-            const loader = document.getElementById('forgotLoader1');
-            
-            btn.disabled = true;
-            btnText.textContent = 'Searching...';
-            loader.classList.remove('hidden');
-            hideAlert('forgotAlert');
-
-            const username = document.getElementById('forgotUsername').value.trim().toLowerCase();
-
-            try {
-                const snapshot = await get(ref(db, 'app_users'));
-                let found = false;
-
-                snapshot.forEach((child) => {
-                    const user = child.val();
-                    const userUsername = (user.username || '').toLowerCase();
-                    const userEmail = (user.email || '').toLowerCase();
-                    
-                    if (userUsername === username || userEmail === username) {
-                        resetUserKey = child.key;
-                        resetUserData = user;
-                        found = true;
-                    }
-                });
-
-                if (!found) throw new Error('Username not found');
-
-                // Check if security question exists
-                if (!resetUserData.securityQuestion || !resetUserData.securityAnswer) {
-                    // If no security question, allow direct reset for admin or show error
-                    if (resetUserData.role === 'admin') {
-                        // Create default security question for admin
-                        resetUserData.securityQuestion = "What is your username?";
-                        resetUserData.securityAnswer = resetUserData.username || "admin";
-                    } else {
-                        throw new Error('No security question set. Contact administrator.');
-                    }
-                }
-
-                // Show step 2
-                document.getElementById('securityQuestionDisplay').textContent = resetUserData.securityQuestion;
-                document.getElementById('forgotStep1').classList.add('hidden');
-                document.getElementById('forgotStep2').classList.remove('hidden');
-                document.getElementById('attemptsLeft').textContent = `${MAX_ATTEMPTS} attempts remaining`;
-                updateStepIndicator(2);
-                securityAttempts = 0;
-
-            } catch (error) {
-                showAlert(error.message, 'error', 'forgotAlert');
-                btn.disabled = false;
-                btnText.textContent = 'Continue';
-                loader.classList.add('hidden');
-            }
-        });
-
-        // STEP 2: Verify Security Answer
-        document.getElementById('forgotForm2').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('forgotBtn2');
-            const btnText = document.getElementById('forgotBtnText2');
-            const loader = document.getElementById('forgotLoader2');
-            const answerInput = document.getElementById('securityAnswer');
-            
-            btn.disabled = true;
-            btnText.textContent = 'Verifying...';
-            loader.classList.remove('hidden');
-
-            const userAnswer = answerInput.value.trim().toLowerCase().replace(/\s+/g, '');
-            const correctAnswer = (resetUserData.securityAnswer || '').toLowerCase().replace(/\s+/g, '');
-
-            if (userAnswer === correctAnswer) {
-                // Correct! Show password reset
-                document.getElementById('forgotStep2').classList.add('hidden');
-                document.getElementById('forgotStep3').classList.remove('hidden');
-                updateStepIndicator(3);
-                hideAlert('forgotAlert');
-            } else {
-                securityAttempts++;
-                const remaining = MAX_ATTEMPTS - securityAttempts;
-                
-                if (securityAttempts >= MAX_ATTEMPTS) {
-                    showAlert('Too many failed attempts. Please try again later.', 'error', 'forgotAlert');
-                    setTimeout(() => showLogin(), 2000);
-                } else {
-                    showAlert(`Incorrect answer. ${remaining} attempts remaining.`, 'error', 'forgotAlert');
-                    document.getElementById('attemptsLeft').textContent = `${remaining} attempts remaining`;
-                    answerInput.value = '';
-                    answerInput.focus();
-                    btn.disabled = false;
-                    btnText.textContent = 'Verify';
-                    loader.classList.add('hidden');
-                }
-            }
-        });
-
-        // STEP 3: Update Password
-        document.getElementById('forgotForm3').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('forgotBtn3');
-            const btnText = document.getElementById('forgotBtnText3');
-            const loader = document.getElementById('forgotLoader3');
-            
-            btn.disabled = true;
-            btnText.textContent = 'Updating...';
-            loader.classList.remove('hidden');
-
-            const newPass = document.getElementById('newPassword').value;
-            const confirmPass = document.getElementById('confirmNewPassword').value;
-
-            if (newPass !== confirmPass) {
-                showAlert('Passwords do not match!', 'error', 'forgotAlert');
-                btn.disabled = false;
-                btnText.textContent = 'Update Password';
-                loader.classList.add('hidden');
-                return;
-            }
-
-            if (newPass.length < 4) {
-                showAlert('Password must be at least 4 characters', 'error', 'forgotAlert');
-                btn.disabled = false;
-                btnText.textContent = 'Update Password';
-                loader.classList.add('hidden');
-                return;
-            }
-
-            try {
-                await update(ref(db, `app_users/${resetUserKey}`), { 
-                    password: newPass,
-                    passwordChangedAt: new Date().toISOString(),
-                    passwordChangedBy: 'self'
-                });
-
-                document.getElementById('forgotStep3').classList.add('hidden');
-                document.getElementById('forgotStep4').classList.remove('hidden');
-                updateStepIndicator(4);
-
-            } catch (error) {
-                showAlert('Error updating password: ' + error.message, 'error', 'forgotAlert');
-                btn.disabled = false;
-                btnText.textContent = 'Update Password';
-                loader.classList.add('hidden');
-            }
-        });
 
         // LOGIN HANDLER
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -575,7 +312,7 @@
                 const snapshot = await get(ref(db, 'app_users'));
                 
                 if (!snapshot.exists()) {
-                    throw new Error('No users found in system');
+                    throw new Error('No users found');
                 }
 
                 let foundUser = null;
@@ -609,7 +346,7 @@
 
                 await update(ref(db, `app_users/${userKey}`), { lastLogin: new Date().toISOString() });
 
-                // Redirect
+                // Redirect based on role
                 if (foundUser.role === 'admin') {
                     window.location.href = 'dashboard.html?page=admin';
                 } else {
@@ -620,6 +357,99 @@
                 showAlert(error.message);
                 btn.disabled = false;
                 btnText.textContent = 'Secure Login';
+                loader.classList.add('hidden');
+            }
+        });
+
+        // FORGOT PASSWORD - STEP 1: Find User
+        document.getElementById('forgotForm1').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('forgotBtn1');
+            const btnText = document.getElementById('forgotBtnText1');
+            const loader = document.getElementById('forgotLoader1');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Searching...';
+            loader.classList.remove('hidden');
+            hideAlert('forgotAlert');
+
+            const username = document.getElementById('forgotUsername').value.trim();
+
+            try {
+                const snapshot = await get(ref(db, 'app_users'));
+                let found = false;
+
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    if (user.username === username || user.email === username) {
+                        resetUserKey = child.key;
+                        resetUserData = user;
+                        found = true;
+                    }
+                });
+
+                if (!found) throw new Error('Username not found');
+
+                // Show user info and proceed to reset
+                document.getElementById('foundUserDisplay').textContent = 
+                    `${resetUserData.name || resetUserData.firstName + ' ' + resetUserData.lastName} (${resetUserData.role})`;
+                
+                document.getElementById('forgotStep1').classList.add('hidden');
+                document.getElementById('forgotStep2').classList.remove('hidden');
+
+            } catch (error) {
+                showAlert(error.message, 'error', 'forgotAlert');
+                btn.disabled = false;
+                btnText.textContent = 'Find Account';
+                loader.classList.add('hidden');
+            }
+        });
+
+        // FORGOT PASSWORD - STEP 2: Update Password
+        document.getElementById('forgotForm2').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('forgotBtn2');
+            const btnText = document.getElementById('forgotBtnText2');
+            const loader = document.getElementById('forgotLoader2');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Updating...';
+            loader.classList.remove('hidden');
+
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmNewPassword').value;
+
+            if (newPass !== confirmPass) {
+                showAlert('Passwords do not match!', 'error', 'forgotAlert');
+                btn.disabled = false;
+                btnText.textContent = 'Update Password';
+                loader.classList.add('hidden');
+                return;
+            }
+
+            if (newPass.length < 4) {
+                showAlert('Password must be at least 4 characters', 'error', 'forgotAlert');
+                btn.disabled = false;
+                btnText.textContent = 'Update Password';
+                loader.classList.add('hidden');
+                return;
+            }
+
+            try {
+                await update(ref(db, `app_users/${resetUserKey}`), { 
+                    password: newPass,
+                    updatedAt: new Date().toISOString()
+                });
+
+                document.getElementById('forgotStep2').classList.add('hidden');
+                document.getElementById('forgotStep3').classList.remove('hidden');
+
+            } catch (error) {
+                showAlert('Error updating password: ' + error.message, 'error', 'forgotAlert');
+                btn.disabled = false;
+                btnText.textContent = 'Update Password';
                 loader.classList.add('hidden');
             }
         });
