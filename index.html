@@ -213,19 +213,10 @@
                 
                 if (!snapshot.exists()) {
                     const defaultAdmin = {
-                        username: "admin",
-                        password: "admin123",
-                        firstName: "System",
-                        lastName: "Administrator",
-                        name: "System Administrator", // For backwards compatibility
-                        role: "admin",
-                        status: "active",
-                        email: "admin@fleetsync.pro",
-                        createdAt: new Date().toISOString(),
-                        lastLogin: null
+                       
                     };
                     await set(ref(db, 'app_users/admin'), defaultAdmin);
-                    console.log("Default admin created: admin/admin123");
+                  
                 }
             } catch (e) {
                 console.error("Error creating default admin:", e);
