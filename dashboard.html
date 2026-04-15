@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetSync Pro | Industrial Asset Management</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        darkBg: '#0f172a',
+                        darkCard: '#1e293b',
+                        lightBg: '#f8fafc'
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        #accessDenied {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { 
+            background: #cbd5e1; 
+            border-radius: 4px; 
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; border: 2px solid transparent; background-clip: content-box; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .nav-link { 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            border-radius: 12px; 
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-link:hover { 
+            background: rgba(255,255,255,0.05);
+            transform: translateX(4px); 
+        }
+        .nav-active { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; 
+            color: white !important; 
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); 
+        }
+        .nav-link.admin-only {
+            border-left: 3px solid #f59e0b;
+        }
+        .nav-active.admin-active {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        }
+
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .dark .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(51, 65, 85, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-field { 
+            border: 1.5px solid #e2e8f0; 
+            border-radius: 0.75rem; 
+            padding: 0.875rem 1rem;
+            width: 100%;
+            transition: all 0.2s;
+            background: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .dark .input-field {
+            background: #0f172a;
+            border-color: #334155;
+            color: #f1f5f9;
+        }
+        .input-field:focus { 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
+            outline: none; 
+        }
+        .input-field::placeholder { color: #94a3b8; }
+
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .page-animate { animation: fadeIn 0.4s ease-out forwards; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .row-animate { animation: slideIn 0.3s ease-out forwards; }
+
+        .hardware-stack { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 0.5rem; 
+        }
+        .hardware-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #3b82f6;
+        }
+        .dark .hardware-item {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: #334155;
+            border-left-color: #3b82f6;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .glass-card { box-shadow: none; border: 1px solid #ddd; }
+            body { background: white; color: black; }
+            aside { display: none; }
+            main { margin-left: 0; padding: 20px; }
+            table { font-size: 12px; }
+            th { background-color: #f1f5f9 !important; color: black !important; }
+        }
+
+        .theme-dot {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dark .theme-dot {
+            transform: translateX(20px);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+        }
+        .badge-spm { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+        .dark .badge-spm { background: rgba(234, 88, 12, 0.1); border-color: rgba(234, 88, 12, 0.3); }
+        .badge-ocems { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+        .dark .badge-ocems { background: rgba(22, 163, 74, 0.1); border-color: rgba(22, 163, 74, 0.3); }
+        .badge-other { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+        .dark .badge-other { background: rgba(100, 116, 139, 0.1); border-color: rgba(100, 116, 139, 0.3); }
+        
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-inactive { background: #fee2e2; color: #991b1b; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn-admin {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        }
+        .btn-admin:hover {
+            box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4) !important;
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-darkBg text-slate-900 dark:text-slate-100 antialiased">
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-lg font-semibold mb-2">Loading Dashboard...</p>
+        <p class="text-sm text-slate-400" id="loadingText">Verifying session...</p>
+    </div>
+
+    <!-- Access Denied / Login Required -->
+    <div id="accessDenied">
+        <div class="text-center max-w-md">
+            <div class="w-20 h-20 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="shield-off" class="w-10 h-10"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white mb-2">Access Denied</h1>
+            <p class="text-slate-400 mb-6" id="deniedReason">Please login to access the dashboard.</p>
+            <a href="index.html" class="inline-block bg-white text-slate-900 px-8 py-3 rounded-xl font-bold hover:bg-slate-100 transition">
+                Go to Login
+            </a>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" class="hidden flex flex-col lg:flex-row min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-full lg:w-72 bg-slate-950 p-6 flex flex-col shadow-2xl z-50 lg:fixed lg:h-screen">
+        <div class="flex items-center gap-4 mb-12 px-2">
+            <div class="bg-blue-600 p-3 rounded-2xl text-white shadow-lg shadow-blue-600/30 relative">
+                <i data-lucide="activity" class="w-6 h-6"></i>
+                <span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-950"></span>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold text-white tracking-tight leading-none">FleetSync <span class="text-blue-500">Pro</span></h1>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1" id="portalType">Industrial Terminal</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 space-y-1" id="mainNav">
+            <div onclick="showPage('dash', this)" class="nav-link nav-active flex items-center gap-3 px-4 py-3.5 font-semibold text-slate-400">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> 
+                <span>Analytics Hub</span>
+            </div>
+            <div id="nav-form" onclick="showPage('form', this)" class="nav-link flex items-center gap-3 px-4 py-3.5 font-semibold text-slate-400">
+                <i data-lucide="plus-square" class="w-5 h-5"></i> 
+                <span>Register Fleet</span>
+            </div>
+            <div onclick="showPage('list', this)" class="nav-link flex items-center gap-3 px-4 py-3.5 font-semibold text-slate-400">
+                <i data-lucide="database" class="w-5 h-5"></i> 
+                <span>Fleet Inventory</span>
+            </div>
+            <!-- Admin Link - Hidden by default -->
+            <div id="nav-admin" onclick="showPage('admin', this)" class="nav-link admin-only hidden flex items-center gap-3 px-4 py-3.5 font-semibold text-slate-400">
+                <i data-lucide="shield" class="w-5 h-5"></i> 
+                <span>Admin Panel</span>
+            </div>
+        </nav>
+
+        <div class="pt-6 border-t border-slate-800/50 space-y-4">
+            <!-- User Info Card -->
+            <div class="px-2 mb-2">
+                <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm" id="userAvatar">U</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-white truncate" id="userName">User</p>
+                            <p class="text-xs text-blue-400 font-bold uppercase" id="userRole">Viewer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="toggleDarkMode()" class="w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800 text-slate-300 px-4 py-3 rounded-xl transition border border-slate-800">
+                <div class="flex items-center gap-3 font-semibold text-sm">
+                    <i data-lucide="moon" class="w-4 h-4"></i>
+                    <span>Dark Mode</span>
+                </div>
+                <div class="w-10 h-5 bg-slate-700 rounded-full relative p-1">
+                    <div class="theme-dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full"></div>
+                </div>
+            </button>
+            
+            <button onclick="logout()" class="w-full flex items-center gap-3 text-red-400 hover:bg-red-950/30 px-4 py-3 rounded-xl transition border border-transparent hover:border-red-900/50">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span class="font-semibold text-sm">Logout</span>
+            </button>
+            
+            <div class="px-2">
+                <p class="text-[10px] text-slate-600 font-medium">System Status</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span class="text-xs text-emerald-500 font-semibold">Online</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-72 p-6 lg:p-10 min-h-screen">
+        
+        <!-- Dashboard View -->
+        <div id="dash" class="page-content">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
+                <div>
+                    <p class="text-blue-600 font-bold text-sm uppercase tracking-widest mb-2">Overview</p>
+                    <h2 class="text-4xl font-black text-slate-900 dark:text-white">Operations Hub</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-slate-500 text-sm font-medium" id="currentDate"></p>
+                    <p class="text-slate-400 text-xs mt-1">Last updated: Just now</p>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div class="glass-card p-6 hover:shadow-xl transition-all duration-300 group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
+                            <i data-lucide="building-2" class="w-6 h-6"></i>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">Live</span>
+                    </div>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Companies</p>
+                    <h3 class="text-4xl font-black text-slate-900 dark:text-white" id="statTotal">0</h3>
+                </div>
+
+                <div class="glass-card p-6 hover:shadow-xl transition-all duration-300 group">
+                    <div class="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-2xl group-hover:scale-110 transition-transform">
+                        <i data-lucide="wind" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">SPM Units</p>
+                    <h3 class="text-4xl font-black text-orange-600" id="statSpm">0</h3>
+                </div>
+
+                <div class="glass-card p-6 hover:shadow-xl transition-all duration-300 group">
+                    <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-2xl group-hover:scale-110 transition-transform">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">OCEMS Units</p>
+                    <h3 class="text-4xl font-black text-emerald-600" id="statOcems">0</h3>
+                </div>
+
+                <div class="glass-card p-6 hover:shadow-xl transition-all duration-300 group">
+                    <div class="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-2xl group-hover:scale-110 transition-transform">
+                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Districts Covered</p>
+                    <h3 class="text-4xl font-black text-purple-600" id="statDist">0</h3>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="glass-card p-8 shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="font-bold text-lg text-slate-900 dark:text-white">Regional Distribution</h3>
+                        <p class="text-sm text-slate-500 mt-1">Active units per district in Tamil Nadu</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Units</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-[400px] w-full">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form View -->
+        <div id="form" class="page-content hidden">
+            <div class="max-w-5xl mx-auto">
+                <div class="mb-8">
+                    <button onclick="showPage('list', document.querySelectorAll('.nav-link')[2])" class="text-sm text-slate-500 hover:text-blue-600 flex items-center gap-1 mb-4">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Inventory
+                    </button>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white" id="formTitle">New Registration</h2>
+                    <p class="text-slate-500 mt-2">Configure industrial monitoring hardware deployment</p>
+                </div>
+                
+                <div class="glass-card p-8 shadow-xl space-y-8">
+                    <!-- Client Info -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase text-slate-500 tracking-wider">Company Name <span class="text-red-500">*</span></label>
+                            <input id="inClient" class="input-field" placeholder="Enter company name" required>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase text-slate-500 tracking-wider">Industry Type</label>
+                            <input id="inIndustry" class="input-field" placeholder="e.g. Textile, Chemical">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase text-slate-500 tracking-wider">Mobile / WhatsApp</label>
+                            <input id="inMobile" type="tel" class="input-field" placeholder="+91 98765 43210">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase text-slate-500 tracking-wider">Email Address</label>
+                            <input id="inEmail" type="email" class="input-field" placeholder="contact@company.com">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase text-slate-500 tracking-wider">District <span class="text-red-500">*</span></label>
+                            <select id="inDist" class="input-field cursor-pointer">
+                                <option value="">Select District</option>
+                                <option>Ariyalur</option><option>Chengalpattu</option><option>Chennai</option><option>Coimbatore</option>
+                                <option>Cuddalore</option><option>Dharmapuri</option><option>Dindigul</option><option>Erode</option>
+                                <option>Kallakurichi</option><option>Kanchipuram</option><option>Kanniyakumari</option><option>Karur</option>
+                                <option>Krishnagiri</option><option>Madurai</option><option>Mayiladuthurai</option><option>Nagapattinam</option>
+                                <option>Namakkal</option><option>Nilgiris</option><option>Perambalur</option><option>Pudukkottai</option>
+                                <option>Ramanathapuram</option><option>Ranipet</option><option>Salem</option><option>Sivaganga</option>
+                                <option>Tenkasi</option><option>Thanjavur</option><option>Theni</option><option>Thoothukudi</option>
+                                <option>Tiruchirappalli</option><option>Tirunelveli</option><option>Tirupathur</option><option>Tiruppur</option>
+                                <option>Tiruvallur</option><option>Tiruvannamalai</option><option>Tiruvarur</option><option>Vellore</option>
+                                <option>Viluppuram</option><option>Virudhunagar</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase text-slate-500 tracking-wider">Area / Village</label>
+                            <input id="inVillage" class="input-field" placeholder="Specific location">
+                        </div>
+                    </div>
+
+                    <!-- Hardware Section -->
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <p class="text-xs font-bold uppercase text-blue-600 tracking-wider mb-1">Hardware Configuration</p>
+                                <p class="text-sm text-slate-500">Add monitoring instruments for this client</p>
+                            </div>
+                            <button onclick="addInstrumentRow()" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Add Instrument
+                            </button>
+                        </div>
+
+                        <div id="instrumentContainer" class="space-y-3">
+                            <!-- Dynamic rows inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
+                        <button onclick="resetForm()" class="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                            Cancel
+                        </button>
+                        <button onclick="saveData()" class="flex-[2] btn-primary text-white font-bold py-4 rounded-xl shadow-lg" id="saveBtn">
+                            Confirm Registration
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- List View -->
+        <div id="list" class="page-content hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white">Fleet Inventory</h2>
+                    <p class="text-slate-500 mt-1">Manage and monitor all deployed assets</p>
+                </div>
+                <div class="flex gap-3 no-print">
+                    <button onclick="exportToExcel()" class="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel
+                    </button>
+                    <button onclick="window.print()" class="flex items-center gap-2 bg-slate-900 text-white border border-slate-900 px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-800 transition shadow-sm">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="mb-6 relative no-print">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+                <input id="qBox" onkeyup="renderData()" placeholder="Search by company, district, hardware type..." 
+                    class="input-field pl-12 py-4 shadow-sm text-base">
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/80 dark:bg-slate-900/80 text-[11px] uppercase font-black text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                                <th class="px-6 py-5 w-1/4">Client Details</th>
+                                <th class="px-6 py-5 w-1/6">Location</th>
+                                <th class="px-6 py-5">Contact</th>
+                                <th class="px-6 py-5 w-1/3">Hardware Stack</th>
+                                <th class="px-6 py-5 text-right no-print w-32">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fleetBody" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-sm">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="hidden py-20 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
+                        <i data-lucide="inbox" class="w-8 h-8 text-slate-400"></i>
+                    </div>
+                    <p class="text-slate-500 font-medium">No records found</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN PANEL VIEW -->
+        <div id="admin" class="page-content hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
+                <div>
+                    <p class="text-amber-600 font-bold text-sm uppercase tracking-widest mb-2">Administration</p>
+                    <h2 class="text-4xl font-black text-slate-900 dark:text-white">User Management</h2>
+                </div>
+                <div class="glass-card px-4 py-2 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-300" id="pendingCount">0 Pending</span>
+                </div>
+            </div>
+
+            <!-- Pending Approvals -->
+            <div class="glass-card p-6 mb-8 border-l-4 border-amber-500">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="user-check" class="w-5 h-5 text-amber-500"></i>
+                    Pending User Approvals
+                </h3>
+                <div id="pendingUsersList" class="space-y-3">
+                    <p class="text-slate-500 text-sm">Loading...</p>
+                </div>
+            </div>
+
+            <!-- All Users -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">All Users</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-xs uppercase font-bold text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                                <th class="py-3">User</th>
+                                <th class="py-3">Username</th>
+                                <th class="py-3">Role</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allUsersList" class="text-sm">
+                            <tr><td colspan="5" class="py-4 text-slate-500">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- System Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                <div class="glass-card p-6 text-center">
+                    <p class="text-slate-500 text-xs font-bold uppercase">Total Users</p>
+                    <h3 class="text-3xl font-black mt-2" id="adminTotalUsers">0</h3>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <p class="text-slate-500 text-xs font-bold uppercase">Active Users</p>
+                    <h3 class="text-3xl font-black text-emerald-600 mt-2" id="adminActiveUsers">0</h3>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <p class="text-slate-500 text-xs font-bold uppercase">Pending</p>
+                    <h3 class="text-3xl font-black text-amber-600 mt-2" id="adminPendingUsers">0</h3>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    </div> <!-- End appContainer -->
+
+    <!-- Data Lists -->
+    <datalist id="masterInstruments">
+        <option value="SPM"> <option value="OCEMS"> <option value="VOC"> <option value="TDS"> <option value="AAQMS">
+        <option value="CEMS"> <option value="Noise Monitor"> <option value="Weather Station">
+    </datalist>
+    <datalist id="masterLoggers">
+        <option value="mcom"> <option value="samyak"> <option value="ait v1"> <option value="trtdlaita"> 
+        <option value="system ole"> <option value="enviro"> <option value="custom">
+    </datalist>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove, set, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDQRKnsV0aFglvXU52V8LkeRmb3godaKyg",
+        authDomain: "rk-tech-eb179.firebaseapp.com",
+        databaseURL: "https://rk-tech-eb179-default-rtdb.firebaseio.com",
+        projectId: "rk-tech-eb179"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    
+    let masterData = [];
+    let myChart = null;
+    let editingId = null;
+    let currentUser = null;
+    let userRole = 'viewer';
+
+    // Initialize Date
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', dateOptions);
+
+    // Session Check
+    function initApp() {
+        const sessionData = sessionStorage.getItem('fleetsync_session') || localStorage.getItem('fleetsync_session');
+        
+        if (!sessionData) {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('accessDenied').style.display = 'flex';
+            return;
+        }
+        
+        try {
+            currentUser = JSON.parse(sessionData);
+            userRole = currentUser.role || 'viewer';
+            
+            // Update UI based on role
+            document.getElementById('userName').textContent = currentUser.name || currentUser.username || 'User';
+            document.getElementById('userAvatar').textContent = (currentUser.name || currentUser.username || 'U').substring(0, 2).toUpperCase();
+            document.getElementById('userRole').textContent = userRole.toUpperCase();
+            document.getElementById('userRole').className = 'text-xs font-bold uppercase ' + (userRole === 'admin' ? 'text-amber-500' : userRole === 'editor' ? 'text-blue-400' : 'text-slate-400');
+            
+            // Show admin link if admin
+            if (userRole === 'admin') {
+                document.getElementById('nav-admin').classList.remove('hidden');
+                document.getElementById('portalType').textContent = 'Admin Portal';
+                loadAdminData();
+            } else {
+                document.getElementById('portalType').textContent = 'Industrial Terminal';
+                // Hide edit features for viewers
+                if (userRole === 'viewer') {
+                    document.getElementById('nav-form').style.display = 'none';
+                }
+            }
+            
+            // Show app
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('appContainer').classList.remove('hidden');
+            
+            // Load fleet data
+            loadFleetData();
+            
+        } catch (e) {
+            console.error('Session error:', e);
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('accessDenied').style.display = 'flex';
+        }
+    }
+
+    // Load Admin Data
+    function loadAdminData() {
+        // Pending users
+        onValue(ref(db, 'pending_users'), (snap) => {
+            const list = document.getElementById('pendingUsersList');
+            const countEl = document.getElementById('pendingCount');
+            list.innerHTML = '';
+            let count = 0;
+            
+            if (snap.exists()) {
+                snap.forEach((child) => {
+                    count++;
+                    const user = child.val();
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div>
+                                <div class="font-semibold text-slate-900 dark:text-white">${user.firstName} ${user.lastName}</div>
+                                <div class="text-xs text-slate-500">${user.email} • ${user.company}</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="approveUser('${child.key}')" class="px-3 py-1 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600">APPROVE</button>
+                                <button onclick="rejectUser('${child.key}')" class="px-3 py-1 bg-red-500 text-white rounded text-xs font-bold hover:bg-red-600">REJECT</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (count === 0) {
+                list.innerHTML = '<p class="text-slate-500 text-sm italic">No pending approvals</p>';
+            }
+            countEl.textContent = count + ' Pending';
+            document.getElementById('adminPendingUsers').textContent = count;
+        });
+
+        // All users
+        onValue(ref(db, 'app_users'), (snap) => {
+            const tbody = document.getElementById('allUsersList');
+            tbody.innerHTML = '';
+            let total = 0, active = 0;
+            
+            if (snap.exists()) {
+                snap.forEach((child) => {
+                    const user = child.val();
+                    total++;
+                    if (user.status === 'active') active++;
+                    
+                    const statusClass = user.status === 'active' ? 'status-active' : user.status === 'pending' ? 'status-pending' : 'status-inactive';
+                    
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-100 dark:border-slate-800">
+                            <td class="py-3">
+                                <div class="font-semibold text-slate-900 dark:text-white">${user.firstName} ${user.lastName}</div>
+                            </td>
+                            <td class="py-3 text-slate-500 text-xs">${user.username}</td>
+                            <td class="py-3"><span class="badge ${user.role === 'admin' ? 'badge-spm' : user.role === 'editor' ? 'badge-ocems' : 'badge-other'}">${user.role}</span></td>
+                            <td class="py-3"><span class="text-xs px-2 py-1 rounded-full font-bold ${statusClass}">${user.status}</span></td>
+                            <td class="py-3 text-right">
+                                <button onclick="toggleUserStatus('${child.key}', '${user.status}')" class="text-blue-600 hover:underline text-xs font-semibold">
+                                    ${user.status === 'active' ? 'Deactivate' : 'Activate'}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            document.getElementById('adminTotalUsers').textContent = total;
+            document.getElementById('adminActiveUsers').textContent = active;
+        });
+    }
+
+    // Admin Functions
+    window.approveUser = async (key) => {
+        const snapshot = await get(ref(db, `pending_users/${key}`));
+        if (snapshot.exists()) {
+            const user = snapshot.val();
+            user.status = 'active';
+            user.approvedAt = new Date().toISOString();
+            await set(ref(db, `app_users/${key}`), user);
+            await remove(ref(db, `pending_users/${key}`));
+        }
+    };
+
+    window.rejectUser = async (key) => {
+        if (confirm('Remove this user?')) {
+            await remove(ref(db, `pending_users/${key}`));
+        }
+    };
+
+    window.toggleUserStatus = async (key, current) => {
+        const newStatus = current === 'active' ? 'inactive' : 'active';
+        await update(ref(db, `app_users/${key}`), { status: newStatus });
+    };
+
+    // Navigation
+    window.showPage = (id, btn) => {
+        // Check permissions
+        if (id === 'form' && userRole === 'viewer') {
+            alert('Viewers cannot add records.');
+            return;
+        }
+        if (id === 'admin' && userRole !== 'admin') {
+            alert('Admin access required.');
+            return;
+        }
+        
+        document.querySelectorAll('.page-content').forEach(p => {
+            p.classList.add('hidden');
+            p.classList.remove('page-animate');
+        });
+        
+        const target = document.getElementById(id);
+        target.classList.remove('hidden');
+        void target.offsetWidth;
+        target.classList.add('page-animate');
+        
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('nav-active');
+            l.classList.remove('admin-active');
+        });
+        
+        if(btn) {
+            btn.classList.add('nav-active');
+            if (id === 'admin') btn.classList.add('admin-active');
+        }
+        
+        if(id !== 'form') { 
+            editingId = null; 
+            resetForm(); 
+        }
+    };
+
+    // Instrument Row Management
+    window.addInstrumentRow = (data = null) => {
+        const container = document.getElementById('instrumentContainer');
+        const div = document.createElement('div');
+        div.className = "inst-row grid grid-cols-1 md:grid-cols-12 gap-3 p-4 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-700 row-animate";
+        
+        div.innerHTML = `
+            <div class="md:col-span-2">
+                <input list="masterInstruments" class="inst-type input-field text-sm" placeholder="Type" value="${data?.type || ''}">
+            </div>
+            <div class="md:col-span-2">
+                <input list="masterLoggers" class="inst-logger input-field text-sm" placeholder="Logger" value="${data?.logger || ''}">
+            </div>
+            <div class="md:col-span-2">
+                <input class="inst-model input-field text-sm" placeholder="Model No" value="${data?.model || ''}">
+            </div>
+            <div class="md:col-span-5">
+                <input class="inst-path input-field text-sm font-mono text-xs" placeholder="Data Path / URL / IP" value="${data?.path || ''}">
+            </div>
+            <div class="md:col-span-1 flex items-center justify-center gap-1">
+                <button onclick="duplicateRow(this)" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition" title="Duplicate">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                </button>
+                <button onclick="this.closest('.inst-row').remove()" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition" title="Remove">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(div);
+        lucide.createIcons();
+    };
+
+    window.duplicateRow = (btn) => {
+        const row = btn.closest('.inst-row');
+        const data = {
+            type: row.querySelector('.inst-type').value,
+            logger: row.querySelector('.inst-logger').value,
+            model: row.querySelector('.inst-model').value,
+            path: row.querySelector('.inst-path').value
+        };
+        window.addInstrumentRow(data);
+    };
+
+    window.resetForm = () => {
+        document.getElementById('inClient').value = "";
+        document.getElementById('inIndustry').value = "";
+        document.getElementById('inMobile').value = "";
+        document.getElementById('inEmail').value = "";
+        document.getElementById('inDist').value = "";
+        document.getElementById('inVillage').value = "";
+        document.getElementById('formTitle').innerText = "New Registration";
+        document.getElementById('saveBtn').innerText = "Confirm Registration";
+        
+        const container = document.getElementById('instrumentContainer');
+        container.innerHTML = '';
+        window.addInstrumentRow();
+        editingId = null;
+    };
+
+    window.saveData = () => {
+        if (userRole === 'viewer') {
+            alert('Permission denied');
+            return;
+        }
+        
+        const client = document.getElementById('inClient').value.trim();
+        if(!client) {
+            alert("Company Name is required!");
+            document.getElementById('inClient').focus();
+            return;
+        }
+
+        const instruments = Array.from(document.querySelectorAll('.inst-row')).map(r => ({
+            type: r.querySelector('.inst-type').value,
+            logger: r.querySelector('.inst-logger').value,
+            model: r.querySelector('.inst-model').value,
+            path: r.querySelector('.inst-path').value
+        })).filter(i => i.type);
+
+        const payload = {
+            client,
+            industry: document.getElementById('inIndustry').value,
+            mobile: document.getElementById('inMobile').value,
+            gmail: document.getElementById('inEmail').value,
+            district: document.getElementById('inDist').value,
+            village: document.getElementById('inVillage').value,
+            instruments,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentUser?.uid || 'unknown'
+        };
+
+        if(editingId) {
+            set(ref(db, 'fleet_pro/' + editingId), payload)
+                .then(() => {
+                    alert("Updated successfully!");
+                    showPage('list', document.querySelectorAll('.nav-link')[2]);
+                })
+                .catch(err => alert("Error: " + err.message));
+        } else {
+            payload.createdAt = new Date().toISOString();
+            push(ref(db, 'fleet_pro'), payload)
+                .then(() => {
+                    alert("Saved successfully!");
+                    resetForm();
+                    showPage('list', document.querySelectorAll('.nav-link')[2]);
+                })
+                .catch(err => alert("Error: " + err.message));
+        }
+    };
+
+    // Data Operations
+    window.editEntry = (id) => {
+        if (userRole === 'viewer') {
+            alert('Viewers cannot edit');
+            return;
+        }
+        
+        const item = masterData.find(d => d.id === id);
+        if(!item) return;
+
+        editingId = id;
+        document.getElementById('inClient').value = item.client || '';
+        document.getElementById('inIndustry').value = item.industry || '';
+        document.getElementById('inMobile').value = item.mobile || '';
+        document.getElementById('inEmail').value = item.gmail || '';
+        document.getElementById('inDist').value = item.district || '';
+        document.getElementById('inVillage').value = item.village || '';
+        
+        const container = document.getElementById('instrumentContainer');
+        container.innerHTML = '';
+        
+        if(item.instruments && item.instruments.length > 0) {
+            item.instruments.forEach(inst => window.addInstrumentRow(inst));
+        } else {
+            window.addInstrumentRow();
+        }
+
+        document.getElementById('formTitle').innerText = "Edit Registration";
+        document.getElementById('saveBtn').innerText = "Update Record";
+        showPage('form', document.getElementById('nav-form'));
+    };
+
+    window.deleteEntry = (id) => {
+        if(userRole !== 'admin') {
+            alert('Only administrators can delete');
+            return;
+        }
+        if(confirm("Delete permanently?")) {
+            remove(ref(db, 'fleet_pro/' + id))
+                .catch(err => alert("Error: " + err.message));
+        }
+    };
+
+    // Excel Export
+    window.exportToExcel = () => {
+        const exportData = [];
+        
+        masterData.forEach(record => {
+            const baseInfo = {
+                'Company Name': record.client,
+                'Industry': record.industry || 'N/A',
+                'District': record.district || 'N/A',
+                'Area/Village': record.village || 'N/A',
+                'Mobile': record.mobile || 'N/A',
+                'Email': record.gmail || 'N/A',
+                'Total Instruments': record.instruments ? record.instruments.length : 0
+            };
+
+            if(record.instruments && record.instruments.length > 0) {
+                record.instruments.forEach((inst, idx) => {
+                    exportData.push({
+                        ...baseInfo,
+                        'Instrument #': idx + 1,
+                        'Type': inst.type,
+                        'Logger': inst.logger,
+                        'Model': inst.model,
+                        'Data Path': inst.path
+                    });
+                });
+            } else {
+                exportData.push({
+                    ...baseInfo,
+                    'Instrument #': '',
+                    'Type': '',
+                    'Logger': '',
+                    'Model': '',
+                    'Data Path': ''
+                });
+            }
+        });
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const colWidths = [
+            { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+        ];
+        ws['!cols'] = colWidths;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Fleet Inventory");
+        
+        const dateStr = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `FleetSync_Inventory_${dateStr}.xlsx`);
+    };
+
+    // Firebase Listener
+    function loadFleetData() {
+        onValue(ref(db, 'fleet_pro'), snap => {
+            const data = snap.val() || {};
+            masterData = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+            renderData();
+        });
+    }
+
+    // Render Function
+    window.renderData = () => {
+        const q = document.getElementById('qBox').value.toLowerCase().trim();
+        const tbody = document.getElementById('fleetBody');
+        tbody.innerHTML = "";
+        
+        let stats = { total: 0, spm: 0, ocems: 0, other: 0, dists: new Set() };
+        
+        const filtered = masterData.filter(d => {
+            const searchStr = `${d.client} ${d.district} ${d.industry} ${d.village} ${d.instruments?.map(i => i.type).join(' ')}`.toLowerCase();
+            return searchStr.includes(q);
+        });
+
+        if(filtered.length === 0) {
+            document.getElementById('emptyState').classList.remove('hidden');
+        } else {
+            document.getElementById('emptyState').classList.add('hidden');
+            
+            filtered.forEach(d => {
+                stats.total++;
+                if(d.district) stats.dists.add(d.district);
+                
+                let instCount = 0;
+                if(d.instruments) {
+                    d.instruments.forEach(i => {
+                        instCount++;
+                        const type = (i.type || '').toUpperCase();
+                        if(type.includes('SPM')) stats.spm++;
+                        else if(type.includes('OCEMS')) stats.ocems++;
+                        else stats.other++;
+                    });
+                }
+
+                let hardwareHtml = '';
+                if(d.instruments && d.instruments.length > 0) {
+                    hardwareHtml = `<div class="hardware-stack">
+                        ${d.instruments.map(i => {
+                            const type = (i.type || '').toUpperCase();
+                            let badgeClass = 'badge-other';
+                            if(type.includes('SPM')) badgeClass = 'badge-spm';
+                            else if(type.includes('OCEMS')) badgeClass = 'badge-ocems';
+                            
+                            return `
+                            <div class="hardware-item p-3 rounded-lg text-xs">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="font-bold text-slate-900 dark:text-white">${i.type || 'Unknown'}</span>
+                                    <span class="${badgeClass}">${i.logger || 'N/A'}</span>
+                                </div>
+                                <div class="text-slate-500 dark:text-slate-400 text-[10px] mb-0.5">${i.model || ''}</div>
+                                <div class="text-slate-400 dark:text-slate-500 text-[10px] truncate font-mono">${i.path || ''}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>`;
+                } else {
+                    hardwareHtml = '<span class="text-slate-400 text-xs italic">No hardware assigned</span>';
+                }
+
+                const waLink = d.mobile ? `https://wa.me/${d.mobile.replace(/\D/g, '')}` : '#';
+                const mailLink = d.gmail ? `mailto:${d.gmail}` : '#';
+
+                // Determine if edit/delete buttons should show
+                let actionsHtml = '';
+                if (userRole !== 'viewer') {
+                    actionsHtml = `
+                        <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editEntry('${d.id}')" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition" title="Edit">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                            ${userRole === 'admin' ? `
+                            <button onclick="deleteEntry('${d.id}')" class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>` : ''}
+                        </div>
+                    `;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                        <td class="px-6 py-5 align-top">
+                            <div class="font-bold text-slate-900 dark:text-white text-base mb-1">${d.client}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-bold uppercase tracking-wider">${d.industry || 'Industrial'}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-5 align-top">
+                            <div class="font-semibold text-slate-700 dark:text-slate-300">${d.district || '-'}</div>
+                            <div class="text-xs text-slate-500 mt-1">${d.village || ''}</div>
+                        </td>
+                        <td class="px-6 py-5 align-top">
+                            <div class="flex flex-col gap-2">
+                                ${d.mobile ? `
+                                <a href="${waLink}" target="_blank" class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+                                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                                    <span>${d.mobile}</span>
+                                </a>` : ''}
+                                ${d.gmail ? `
+                                <a href="${mailLink}" class="flex items-center gap-2 text-xs text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition truncate max-w-[200px]">
+                                    <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+                                    <span>${d.gmail}</span>
+                                </a>` : ''}
+                            </div>
+                        </td>
+                        <td class="px-6 py-5 align-top">
+                            ${hardwareHtml}
+                        </td>
+                        <td class="px-6 py-5 text-right align-top no-print">
+                            ${actionsHtml}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('statTotal').innerText = stats.total;
+        document.getElementById('statSpm').innerText = stats.spm;
+        document.getElementById('statOcems').innerText = stats.ocems;
+        document.getElementById('statDist').innerText = stats.dists.size;
+        updateChart(filtered);
+        lucide.createIcons();
+    };
+
+    function updateChart(data) {
+        const ctx = document.getElementById('mainChart');
+        if(!ctx) return;
+        
+        const distCount = {};
+        data.forEach(d => { 
+            if(d.district) distCount[d.district] = (distCount[d.district] || 0) + 1; 
+        });
+        
+        const labels = Object.keys(distCount);
+        const values = Object.values(distCount);
+        
+        if(myChart) {
+            myChart.destroy();
+        }
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: { 
+                labels, 
+                datasets: [{ 
+                    label: 'Companies', 
+                    data: values, 
+                    backgroundColor: isDark ? '#3b82f6' : '#2563eb',
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barThickness: 24,
+                    maxBarThickness: 32
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? '#1e293b' : '#fff',
+                        titleColor: isDark ? '#fff' : '#1e293b',
+                        bodyColor: isDark ? '#cbd5e1' : '#475569',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { 
+                            color: isDark ? '#334155' : '#e2e8f0',
+                            drawBorder: false
+                        },
+                        ticks: { 
+                            color: isDark ? '#94a3b8' : '#64748b',
+                            font: { size: 11 }
+                        }
+                    },
+                    x: { 
+                        grid: { display: false, drawBorder: false },
+                        ticks: { 
+                            color: isDark ? '#94a3b8' : '#64748b',
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Theme Toggle
+    window.toggleDarkMode = () => {
+        document.documentElement.classList.toggle('dark');
+        const isDark = document.documentElement.classList.contains('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        renderData();
+    };
+
+    // Logout
+    window.logout = () => {
+        sessionStorage.removeItem('fleetsync_session');
+        localStorage.removeItem('fleetsync_session');
+        window.location.href = 'index.html';
+    };
+
+    // Initialize Theme
+    if(localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    }
+
+    // Initialize Icons and App
+    lucide.createIcons();
+    
+    // Start the app
+    initApp();
+    
+    // Add first instrument row
+    window.addInstrumentRow();
+</script>
+</body>
+</html>

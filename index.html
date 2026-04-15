@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetSync Pro | Select Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .portal-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        .portal-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .portal-card.admin:hover {
+            border-color: #f59e0b;
+            box-shadow: 0 20px 25px -5px rgba(245, 158, 11, 0.2);
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn-admin {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+        }
+        .loading-spinner {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden { display: none !important; }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+    </style>
+</head>
+<body>
+    <div class="glass-panel">
+        <!-- Selection Screen -->
+        <div id="selectionScreen">
+            <div class="text-center mb-8">
+                <div class="bg-blue-600 p-4 rounded-2xl text-white inline-block mb-4 shadow-lg">
+                    <i data-lucide="activity" class="w-10 h-10"></i>
+                </div>
+                <h1 class="text-3xl font-black text-slate-900 mb-2">FleetSync Pro</h1>
+                <p class="text-slate-500">Select your access portal</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- User Portal -->
+                <div class="portal-card" onclick="showUserLogin()">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">User Portal</h3>
+                    <p class="text-sm text-slate-500 mb-4">Fleet inventory & analytics</p>
+                    <span class="text-blue-600 font-semibold text-sm">Access Dashboard →</span>
+                </div>
+
+                <!-- Admin Portal -->
+                <div class="portal-card admin" onclick="showAdminLogin()">
+                    <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="shield" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Admin Portal</h3>
+                    <p class="text-sm text-slate-500 mb-4">User management & system control</p>
+                    <span class="text-amber-600 font-semibold text-sm">Admin Access →</span>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-slate-200 text-center">
+                <p class="text-sm text-slate-600">Don't have an account? <a href="register.html" class="text-blue-600 font-bold hover:underline">Request Access</a></p>
+            </div>
+        </div>
+
+        <!-- User Login -->
+        <div id="userLoginScreen" class="hidden max-w-md mx-auto">
+            <button onclick="showSelection()" class="mb-6 text-slate-500 hover:text-slate-800 flex items-center gap-1">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+            </button>
+            
+            <div class="text-center mb-8">
+                <div class="bg-blue-600 p-4 rounded-2xl text-white inline-block mb-4">
+                    <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900">User Login</h2>
+            </div>
+
+            <div id="userError" class="hidden alert alert-error"></div>
+
+            <form id="userLoginForm">
+                <input type="text" id="userUsername" class="input-field" placeholder="Username" required>
+                <input type="password" id="userPassword" class="input-field" placeholder="Password" required>
+                
+                <button type="submit" class="btn-primary" id="userLoginBtn">
+                    <span id="userBtnText">Login</span>
+                    <span id="userBtnLoader" class="loading-spinner hidden"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Admin Login -->
+        <div id="adminLoginScreen" class="hidden max-w-md mx-auto">
+            <button onclick="showSelection()" class="mb-6 text-slate-500 hover:text-slate-800 flex items-center gap-1">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+            </button>
+            
+            <div class="text-center mb-8">
+                <div class="bg-amber-500 p-4 rounded-2xl text-white inline-block mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900">Admin Login</h2>
+            </div>
+
+            <div id="adminError" class="hidden alert alert-error"></div>
+
+            <form id="adminLoginForm">
+                <input type="text" id="adminUsername" class="input-field" placeholder="Admin Username" required>
+                <input type="password" id="adminPassword" class="input-field" placeholder="Admin Password" required>
+                
+                <button type="submit" class="btn-primary btn-admin" id="adminLoginBtn">
+                    <span id="adminBtnText">Access Admin Panel</span>
+                    <span id="adminBtnLoader" class="loading-spinner hidden"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQRKnsV0aFglvXU52V8LkeRmb3godaKyg",
+            databaseURL: "https://rk-tech-eb179-default-rtdb.firebaseio.com",
+            projectId: "rk-tech-eb179"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Create default admin if none exists
+        async function initDefaultAdmin() {
+            try {
+                const usersRef = ref(db, 'app_users');
+                const snapshot = await get(usersRef);
+                
+                if (!snapshot.exists()) {
+                    const defaultAdmin = {
+                        username: "admin",
+                        password: "admin123",
+                        firstName: "System",
+                        lastName: "Administrator",
+                        name: "System Administrator", // For backwards compatibility
+                        role: "admin",
+                        status: "active",
+                        email: "admin@fleetsync.pro",
+                        createdAt: new Date().toISOString(),
+                        lastLogin: null
+                    };
+                    await set(ref(db, 'app_users/admin'), defaultAdmin);
+                    console.log("Default admin created: admin/admin123");
+                }
+            } catch (e) {
+                console.error("Error creating default admin:", e);
+            }
+        }
+
+        initDefaultAdmin();
+
+        window.showSelection = () => {
+            document.getElementById('selectionScreen').classList.remove('hidden');
+            document.getElementById('userLoginScreen').classList.add('hidden');
+            document.getElementById('adminLoginScreen').classList.add('hidden');
+        };
+
+        window.showUserLogin = () => {
+            document.getElementById('selectionScreen').classList.add('hidden');
+            document.getElementById('userLoginScreen').classList.remove('hidden');
+            document.getElementById('userError').classList.add('hidden');
+        };
+
+        window.showAdminLogin = () => {
+            document.getElementById('selectionScreen').classList.add('hidden');
+            document.getElementById('adminLoginScreen').classList.remove('hidden');
+            document.getElementById('adminError').classList.add('hidden');
+        };
+
+        async function handleLogin(username, password, type, btnId, btnTextId, loaderId, errorId) {
+            const btn = document.getElementById(btnId);
+            const btnText = document.getElementById(btnTextId);
+            const loader = document.getElementById(loaderId);
+            const errorBox = document.getElementById(errorId);
+            
+            btn.disabled = true;
+            btnText.textContent = 'Verifying...';
+            loader.classList.remove('hidden');
+            errorBox.classList.add('hidden');
+
+            try {
+                // Get all users
+                const snapshot = await get(ref(db, 'app_users'));
+                
+                if (!snapshot.exists()) {
+                    throw new Error('No users found in system');
+                }
+
+                let foundUser = null;
+                let userKey = null;
+
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    // Check both username and email for flexibility
+                    if ((user.username === username || user.email === username) && user.password === password) {
+                        foundUser = user;
+                        userKey = child.key;
+                    }
+                });
+
+                if (!foundUser) {
+                    throw new Error('Invalid username or password');
+                }
+
+                if (foundUser.status !== 'active') {
+                    throw new Error('Account is ' + foundUser.status + '. Contact administrator.');
+                }
+
+                // For admin login, ensure role is admin
+                if (type === 'admin' && foundUser.role !== 'admin') {
+                    throw new Error('You do not have admin privileges');
+                }
+
+                // Create session - THIS IS THE CRITICAL PART
+                const sessionData = {
+                    uid: userKey,
+                    username: foundUser.username || username,
+                    name: foundUser.name || (foundUser.firstName + ' ' + foundUser.lastName) || username,
+                    firstName: foundUser.firstName || '',
+                    lastName: foundUser.lastName || '',
+                    role: foundUser.role || 'viewer',
+                    email: foundUser.email || '',
+                    loginTime: new Date().toISOString()
+                };
+
+                console.log("Setting session:", sessionData); // Debug
+
+                // Store in sessionStorage
+                sessionStorage.setItem('fleetsync_session', JSON.stringify(sessionData));
+
+                // Update last login
+                await set(ref(db, `app_users/${userKey}/lastLogin`), new Date().toISOString());
+
+                // Redirect based on type
+                if (type === 'admin') {
+                    window.location.href = 'dashboard.html?page=admin';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+
+            } catch (error) {
+                console.error(error);
+                errorBox.textContent = error.message;
+                errorBox.classList.remove('hidden');
+                btn.disabled = false;
+                btnText.textContent = type === 'admin' ? 'Access Admin Panel' : 'Login';
+                loader.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('userLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('userUsername').value.trim();
+            const password = document.getElementById('userPassword').value;
+            handleLogin(username, password, 'user', 'userLoginBtn', 'userBtnText', 'userBtnLoader', 'userError');
+        });
+
+        document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            handleLogin(username, password, 'admin', 'adminLoginBtn', 'adminBtnText', 'adminBtnLoader', 'adminError');
+        });
+
+        // Initialize icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

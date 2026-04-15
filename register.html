@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetSync Pro | Register Access</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        .role-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .role-card:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .role-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .loading-spinner {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-panel">
+        <div class="text-center mb-8">
+            <div class="bg-emerald-600 p-4 rounded-2xl text-white inline-block mb-4 shadow-lg shadow-emerald-600/30">
+                <i data-lucide="user-plus" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900">Request Access</h1>
+            <p class="text-slate-500 text-sm mt-2">Register for FleetSync Pro account</p>
+        </div>
+
+        <div id="alertBox" class="hidden"></div>
+
+        <form id="registerForm">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" id="firstName" class="input-field" placeholder="First Name" required>
+                <input type="text" id="lastName" class="input-field" placeholder="Last Name" required>
+            </div>
+            
+            <input type="text" id="username" class="input-field" placeholder="Username (unique)" required>
+            <input type="email" id="email" class="input-field" placeholder="Email Address" required>
+            <input type="text" id="company" class="input-field" placeholder="Company/Organization" required>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <input type="password" id="password" class="input-field" placeholder="Password" required>
+                <input type="password" id="confirmPassword" class="input-field" placeholder="Confirm Password" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold uppercase text-slate-500 tracking-wider mb-2 ml-1">Request Role</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="role-card selected" onclick="selectRole('viewer', this)">
+                        <i data-lucide="eye" class="w-5 h-5 text-blue-600 mx-auto mb-2"></i>
+                        <div class="text-xs font-bold text-slate-700">Viewer</div>
+                        <div class="text-[10px] text-slate-500">Read Only</div>
+                    </div>
+                    <div class="role-card" onclick="selectRole('editor', this)">
+                        <i data-lucide="edit-3" class="w-5 h-5 text-blue-600 mx-auto mb-2"></i>
+                        <div class="text-xs font-bold text-slate-700">Editor</div>
+                        <div class="text-[10px] text-slate-500">Add/Edit</div>
+                    </div>
+                    <div class="role-card" onclick="selectRole('admin', this)">
+                        <i data-lucide="shield" class="w-5 h-5 text-blue-600 mx-auto mb-2"></i>
+                        <div class="text-xs font-bold text-slate-700">Admin</div>
+                        <div class="text-[10px] text-slate-500">Full Access</div>
+                    </div>
+                </div>
+                <input type="hidden" id="selectedRole" value="viewer">
+            </div>
+
+            <div class="flex items-start gap-3 mb-6">
+                <input type="checkbox" id="terms" required class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600">
+                <label for="terms" class="text-sm text-slate-600 leading-relaxed">
+                    I agree to the Terms of Service and Privacy Policy. I understand that account approval is required.
+                </label>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <span id="btnText">Submit Registration</span>
+                <span id="btnLoader" class="loading-spinner hidden"></span>
+            </button>
+        </form>
+
+        <!-- Success View -->
+        <div id="successView" class="hidden text-center py-8">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Registration Submitted!</h3>
+            <p class="text-slate-600 mb-6">Your account is pending approval. You will be notified once approved.</p>
+            <a href="index.html" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition">Go to Login</a>
+        </div>
+
+        <div class="mt-6 pt-6 border-t border-slate-200 text-center">
+            <p class="text-sm text-slate-600">
+                Already have access? <a href="index.html" class="text-blue-600 font-bold hover:underline">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQRKnsV0aFglvXU52V8LkeRmb3godaKyg",
+            databaseURL: "https://rk-tech-eb179-default-rtdb.firebaseio.com",
+            projectId: "rk-tech-eb179"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.selectRole = (role, element) => {
+            document.getElementById('selectedRole').value = role;
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+        };
+
+        function showAlert(message, type) {
+            const box = document.getElementById('alertBox');
+            box.className = `alert alert-${type}`;
+            box.textContent = message;
+            box.classList.remove('hidden');
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const loader = document.getElementById('btnLoader');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Submitting...';
+            loader.classList.remove('hidden');
+            
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validation
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Submit Registration';
+                loader.classList.add('hidden');
+                return;
+            }
+
+            if (password.length < 4) {
+                showAlert('Password must be at least 4 characters', 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Submit Registration';
+                loader.classList.add('hidden');
+                return;
+            }
+
+            try {
+                // Check if username exists
+                const usersRef = ref(db, 'app_users');
+                const snapshot = await get(usersRef);
+                
+                let usernameExists = false;
+                let emailExists = false;
+
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        const user = child.val();
+                        if (user.username === username) usernameExists = true;
+                        if (user.email === email) emailExists = true;
+                    });
+                }
+
+                if (usernameExists) {
+                    throw new Error('Username already taken');
+                }
+                if (emailExists) {
+                    throw new Error('Email already registered');
+                }
+
+                const userData = {
+                    username: username,
+                    password: password, // In production, hash this
+                    firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value,
+                    email: email,
+                    company: document.getElementById('company').value,
+                    role: document.getElementById('selectedRole').value,
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Save to pending_users for admin review (optional, for workflow)
+                const newPendingRef = push(ref(db, 'pending_users'));
+                await set(newPendingRef, userData);
+
+                // Also save to app_users with pending status
+                // Using username as key for easy lookup, or use push
+                const newUserRef = push(ref(db, 'app_users'));
+                await set(newUserRef, userData);
+
+                // Show success
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('successView').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error(error);
+                showAlert(error.message || 'Registration failed', 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Submit Registration';
+                loader.classList.add('hidden');
+            }
+        });
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
