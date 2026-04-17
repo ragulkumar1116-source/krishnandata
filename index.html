@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FleetSync Pro | Select Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
@@ -21,7 +17,6 @@
             justify-content: center;
             padding: 20px;
         }
-        
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 24px;
@@ -30,62 +25,6 @@
             max-width: 900px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-        
-        .text-center { text-align: center; }
-        .mb-2 { margin-bottom: 8px; }
-        .mb-4 { margin-bottom: 16px; }
-        .mb-6 { margin-bottom: 24px; }
-        .mb-8 { margin-bottom: 32px; }
-        .mt-8 { margin-top: 32px; }
-        .pt-6 { padding-top: 24px; }
-        
-        .bg-blue-600 { background-color: #2563eb; }
-        .bg-amber-500 { background-color: #f59e0b; }
-        .text-white { color: #ffffff; }
-        .text-slate-500 { color: #64748b; }
-        .text-slate-600 { color: #475569; }
-        .text-slate-900 { color: #0f172a; }
-        .text-blue-600 { color: #2563eb; }
-        .text-amber-600 { color: #d97706; }
-        
-        .inline-block { display: inline-block; }
-        .flex { display: flex; }
-        .items-center { align-items: center; }
-        .justify-center { justify-content: center; }
-        .gap-1 { gap: 4px; }
-        
-        .grid { display: grid; }
-        @media (min-width: 768px) {
-            .md-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        }
-        .gap-6 { gap: 24px; }
-        
-        .w-10 { width: 40px; height: 40px; }
-        .w-8 { width: 32px; height: 32px; }
-        .w-4 { width: 16px; height: 16px; }
-        .w-16 { width: 64px; height: 64px; }
-        .h-16 { height: 64px; }
-        .h-10 { height: 40px; }
-        
-        .rounded-2xl { border-radius: 16px; }
-        .rounded-full { border-radius: 9999px; }
-        .rounded-xl { border-radius: 12px; }
-        
-        .p-4 { padding: 16px; }
-        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        
-        .font-black { font-weight: 800; }
-        .font-bold { font-weight: 700; }
-        .font-semibold { font-weight: 600; }
-        
-        .text-3xl { font-size: 30px; line-height: 36px; }
-        .text-2xl { font-size: 24px; line-height: 32px; }
-        .text-xl { font-size: 20px; line-height: 28px; }
-        .text-sm { font-size: 14px; line-height: 20px; }
-        
-        .border-t { border-top: 1px solid #e2e8f0; }
-        
-        /* Portal Cards */
         .portal-card {
             border: 2px solid #e2e8f0;
             border-radius: 20px;
@@ -104,24 +43,19 @@
             border-color: #f59e0b;
             box-shadow: 0 20px 25px -5px rgba(245, 158, 11, 0.2);
         }
-        
-        /* Form Styles */
-        .max-w-md { max-width: 448px; margin: 0 auto; }
         .input-field {
             width: 100%;
             padding: 14px 16px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             font-size: 15px;
-            font-family: inherit;
         }
         .input-field:focus {
             border-color: #3b82f6;
             outline: none;
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
-        
         .btn-primary {
             width: 100%;
             background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -132,51 +66,14 @@
             border: none;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 8px;
-            font-family: inherit;
-            font-size: 15px;
         }
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
         }
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
         .btn-admin {
             background: linear-gradient(135deg, #f59e0b, #d97706) !important;
         }
-        
-        /* Utility backgrounds */
-        .bg-blue-100 { background-color: #dbeafe; color: #2563eb; }
-        .bg-amber-100 { background-color: #fef3c7; color: #d97706; }
-        
-        /* Turnstile */
-        .turnstile-container {
-            margin: 20px 0;
-            min-height: 65px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        /* Alerts */
-        .alert {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .alert-error { 
-            background: #fee2e2; 
-            color: #991b1b; 
-            border: 1px solid #fecaca; 
-        }
-        
-        /* Loading */
         .loading-spinner {
             border: 2px solid rgba(255,255,255,0.3);
             border-top: 2px solid white;
@@ -186,31 +83,21 @@
             animation: spin 1s linear infinite;
             display: inline-block;
             margin-left: 8px;
-            vertical-align: middle;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
         .hidden { display: none !important; }
-        
-        /* Back button */
-        .back-btn {
-            background: none;
-            border: none;
-            color: #64748b;
-            cursor: pointer;
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
             font-size: 14px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            font-weight: 600;
         }
-        .back-btn:hover { color: #1e293b; }
-        
-        a { color: #2563eb; text-decoration: none; font-weight: 700; }
-        a:hover { text-decoration: underline; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
     </style>
 </head>
 <body>
@@ -225,9 +112,10 @@
                 <p class="text-slate-500">Select your access portal</p>
             </div>
 
-            <div class="grid md-grid-cols-2 gap-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- User Portal -->
                 <div class="portal-card" onclick="showUserLogin()">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
                     </div>
                     <h3 class="text-xl font-bold text-slate-900 mb-2">User Portal</h3>
@@ -235,8 +123,9 @@
                     <span class="text-blue-600 font-semibold text-sm">Access Dashboard →</span>
                 </div>
 
+                <!-- Admin Portal -->
                 <div class="portal-card admin" onclick="showAdminLogin()">
-                    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="shield" class="w-8 h-8"></i>
                     </div>
                     <h3 class="text-xl font-bold text-slate-900 mb-2">Admin Portal</h3>
@@ -245,14 +134,14 @@
                 </div>
             </div>
 
-            <div class="mt-8 pt-6 text-center">
-                <p class="text-sm text-slate-600">Don't have an account? <a href="register.html">Request Access</a></p>
+            <div class="mt-8 pt-6 border-t border-slate-200 text-center">
+                <p class="text-sm text-slate-600">Don't have an account? <a href="register.html" class="text-blue-600 font-bold hover:underline">Request Access</a></p>
             </div>
         </div>
 
         <!-- User Login -->
-        <div id="userLoginScreen" class="hidden max-w-md">
-            <button class="back-btn" onclick="showSelection()">
+        <div id="userLoginScreen" class="hidden max-w-md mx-auto">
+            <button onclick="showSelection()" class="mb-6 text-slate-500 hover:text-slate-800 flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
             </button>
             
@@ -269,24 +158,16 @@
                 <input type="text" id="userUsername" class="input-field" placeholder="Username" required>
                 <input type="password" id="userPassword" class="input-field" placeholder="Password" required>
                 
-                <div class="turnstile-container">
-                    <div class="cf-turnstile" 
-                         data-sitekey="0x4AAAAAAC_BjsQtA7pfoO_G" 
-                         data-callback="onUserTurnstileSuccess"
-                         data-theme="light"
-                         id="userTurnstile"></div>
-                </div>
-                
-                <button type="submit" class="btn-primary" id="userLoginBtn" disabled>
-                    <span id="userBtnText">Complete CAPTCHA First</span>
+                <button type="submit" class="btn-primary" id="userLoginBtn">
+                    <span id="userBtnText">Login</span>
                     <span id="userBtnLoader" class="loading-spinner hidden"></span>
                 </button>
             </form>
         </div>
 
         <!-- Admin Login -->
-        <div id="adminLoginScreen" class="hidden max-w-md">
-            <button class="back-btn" onclick="showSelection()">
+        <div id="adminLoginScreen" class="hidden max-w-md mx-auto">
+            <button onclick="showSelection()" class="mb-6 text-slate-500 hover:text-slate-800 flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
             </button>
             
@@ -303,16 +184,8 @@
                 <input type="text" id="adminUsername" class="input-field" placeholder="Admin Username" required>
                 <input type="password" id="adminPassword" class="input-field" placeholder="Admin Password" required>
                 
-                <div class="turnstile-container">
-                    <div class="cf-turnstile" 
-                         data-sitekey="0x4AAAAAAC_BjsQtA7pfoO_G" 
-                         data-callback="onAdminTurnstileSuccess"
-                         data-theme="light"
-                         id="adminTurnstile"></div>
-                </div>
-                
-                <button type="submit" class="btn-primary btn-admin" id="adminLoginBtn" disabled>
-                    <span id="adminBtnText">Complete CAPTCHA First</span>
+                <button type="submit" class="btn-primary btn-admin" id="adminLoginBtn">
+                    <span id="adminBtnText">Access Admin Panel</span>
                     <span id="adminBtnLoader" class="loading-spinner hidden"></span>
                 </button>
             </form>
@@ -332,63 +205,58 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        let userTurnstileToken = null;
-        let adminTurnstileToken = null;
+        // Create default admin if none exists
+        async function initDefaultAdmin() {
+            try {
+                const usersRef = ref(db, 'app_users');
+                const snapshot = await get(usersRef);
+                
+                if (!snapshot.exists()) {
+                    const defaultAdmin = {
+                        username: "admin",
+                        password: "admin123",
+                        firstName: "System",
+                        lastName: "Administrator",
+                        name: "System Administrator", // For backwards compatibility
+                        role: "admin",
+                        status: "active",
+                        email: "admin@fleetsync.pro",
+                        createdAt: new Date().toISOString(),
+                        lastLogin: null
+                    };
+                    await set(ref(db, 'app_users/admin'), defaultAdmin);
+                    console.log("Default admin created: admin/admin123");
+                }
+            } catch (e) {
+                console.error("Error creating default admin:", e);
+            }
+        }
 
-        window.onUserTurnstileSuccess = function(token) {
-            userTurnstileToken = token;
-            document.getElementById('userLoginBtn').disabled = false;
-            document.getElementById('userBtnText').textContent = 'Login';
-        };
-
-        window.onAdminTurnstileSuccess = function(token) {
-            adminTurnstileToken = token;
-            document.getElementById('adminLoginBtn').disabled = false;
-            document.getElementById('adminBtnText').textContent = 'Access Admin Panel';
-
+        initDefaultAdmin();
 
         window.showSelection = () => {
             document.getElementById('selectionScreen').classList.remove('hidden');
             document.getElementById('userLoginScreen').classList.add('hidden');
             document.getElementById('adminLoginScreen').classList.add('hidden');
-            
-            if (typeof turnstile !== 'undefined') {
-                turnstile.reset('#userTurnstile');
-                turnstile.reset('#adminTurnstile');
-            }
-            userTurnstileToken = null;
-            adminTurnstileToken = null;
         };
 
         window.showUserLogin = () => {
             document.getElementById('selectionScreen').classList.add('hidden');
             document.getElementById('userLoginScreen').classList.remove('hidden');
             document.getElementById('userError').classList.add('hidden');
-            document.getElementById('userLoginBtn').disabled = true;
-            document.getElementById('userBtnText').textContent = 'Complete CAPTCHA First';
-            userTurnstileToken = null;
         };
 
         window.showAdminLogin = () => {
             document.getElementById('selectionScreen').classList.add('hidden');
             document.getElementById('adminLoginScreen').classList.remove('hidden');
             document.getElementById('adminError').classList.add('hidden');
-            document.getElementById('adminLoginBtn').disabled = true;
-            document.getElementById('adminBtnText').textContent = 'Complete CAPTCHA First';
-            adminTurnstileToken = null;
         };
 
-        async function handleLogin(username, password, type, btnId, btnTextId, loaderId, errorId, turnstileToken) {
+        async function handleLogin(username, password, type, btnId, btnTextId, loaderId, errorId) {
             const btn = document.getElementById(btnId);
             const btnText = document.getElementById(btnTextId);
             const loader = document.getElementById(loaderId);
             const errorBox = document.getElementById(errorId);
-            
-            if (!turnstileToken) {
-                errorBox.textContent = 'Please complete the human verification';
-                errorBox.classList.remove('hidden');
-                return;
-            }
             
             btn.disabled = true;
             btnText.textContent = 'Verifying...';
@@ -396,11 +264,11 @@
             errorBox.classList.add('hidden');
 
             try {
-                // NOTE: Server-side verification of Turnstile token recommended
+                // Get all users
                 const snapshot = await get(ref(db, 'app_users'));
                 
                 if (!snapshot.exists()) {
-                    throw new Error('No users found. Create admin manually in Firebase Console.');
+                    throw new Error('No users found in system');
                 }
 
                 let foundUser = null;
@@ -408,31 +276,55 @@
 
                 snapshot.forEach((child) => {
                     const user = child.val();
+                    // Check both username and email for flexibility
                     if ((user.username === username || user.email === username) && user.password === password) {
                         foundUser = user;
                         userKey = child.key;
                     }
                 });
 
-                if (!foundUser) throw new Error('Invalid credentials');
-                if (foundUser.status !== 'active') throw new Error('Account inactive');
-                if (type === 'admin' && foundUser.role !== 'admin') throw new Error('Not an admin');
+                if (!foundUser) {
+                    throw new Error('Invalid username or password');
+                }
 
+                if (foundUser.status !== 'active') {
+                    throw new Error('Account is ' + foundUser.status + '. Contact administrator.');
+                }
+
+                // For admin login, ensure role is admin
+                if (type === 'admin' && foundUser.role !== 'admin') {
+                    throw new Error('You do not have admin privileges');
+                }
+
+                // Create session - THIS IS THE CRITICAL PART
                 const sessionData = {
                     uid: userKey,
-                    username: foundUser.username,
-                    name: foundUser.name || `${foundUser.firstName} ${foundUser.lastName}`,
-                    role: foundUser.role,
-                    email: foundUser.email,
+                    username: foundUser.username || username,
+                    name: foundUser.name || (foundUser.firstName + ' ' + foundUser.lastName) || username,
+                    firstName: foundUser.firstName || '',
+                    lastName: foundUser.lastName || '',
+                    role: foundUser.role || 'viewer',
+                    email: foundUser.email || '',
                     loginTime: new Date().toISOString()
                 };
 
+                console.log("Setting session:", sessionData); // Debug
+
+                // Store in sessionStorage
                 sessionStorage.setItem('fleetsync_session', JSON.stringify(sessionData));
+
+                // Update last login
                 await set(ref(db, `app_users/${userKey}/lastLogin`), new Date().toISOString());
 
-                window.location.href = type === 'admin' ? 'dashboard.html?page=admin' : 'dashboard.html';
+                // Redirect based on type
+                if (type === 'admin') {
+                    window.location.href = 'dashboard.html?page=admin';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
 
             } catch (error) {
+                console.error(error);
                 errorBox.textContent = error.message;
                 errorBox.classList.remove('hidden');
                 btn.disabled = false;
@@ -443,24 +335,19 @@
 
         document.getElementById('userLoginForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            handleLogin(
-                document.getElementById('userUsername').value.trim(),
-                document.getElementById('userPassword').value,
-                'user', 'userLoginBtn', 'userBtnText', 'userBtnLoader', 'userError',
-                userTurnstileToken
-            );
+            const username = document.getElementById('userUsername').value.trim();
+            const password = document.getElementById('userPassword').value;
+            handleLogin(username, password, 'user', 'userLoginBtn', 'userBtnText', 'userBtnLoader', 'userError');
         });
 
         document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            handleLogin(
-                document.getElementById('adminUsername').value.trim(),
-                document.getElementById('adminPassword').value,
-                'admin', 'adminLoginBtn', 'adminBtnText', 'adminBtnLoader', 'adminError',
-                adminTurnstileToken
-            );
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            handleLogin(username, password, 'admin', 'adminLoginBtn', 'adminBtnText', 'adminBtnLoader', 'adminError');
         });
 
+        // Initialize icons
         lucide.createIcons();
     </script>
 </body>
