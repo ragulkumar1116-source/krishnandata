@@ -344,20 +344,7 @@
             adminTurnstileToken = token;
             document.getElementById('adminLoginBtn').disabled = false;
             document.getElementById('adminBtnText').textContent = 'Access Admin Panel';
-        };
 
-        // REMOVED: Auto-create admin (causes permission denied)
-        // Instead, manually create admin in Firebase Console once:
-        // Path: app_users/admin
-        // {
-        //   "username": "admin",
-        //   "password": "admin123",
-        //   "firstName": "System",
-        //   "lastName": "Administrator",
-        //   "role": "admin",
-        //   "status": "active",
-        //   "email": "admin@fleetsync.pro"
-        // }
 
         window.showSelection = () => {
             document.getElementById('selectionScreen').classList.remove('hidden');
