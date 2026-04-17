@@ -3,1356 +3,477 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Manual Portal | Persistent Storage</title>
-    
+    <title>FleetSync Pro | Select Portal</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
-        :root {
-            --primary: #0f172a;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --sidebar-bg: #f8fafc;
-            --content-bg: #ffffff;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --header-height: 64px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--content-bg);
-            color: var(--text-primary);
-            height: 100vh;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 340px 1fr;
-        }
-
-        .mobile-header {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: var(--header-height);
-            background: var(--sidebar-bg);
-            border-bottom: 1px solid var(--border);
-            z-index: 1000;
-            padding: 0 20px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .menu-toggle {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--text-primary);
-            cursor: pointer;
-            padding: 8px;
-        }
-
-        .sidebar {
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .sidebar-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--accent);
-        }
-
-        .logo svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        .subtitle {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .upload-btn {
-            margin: 16px 24px;
-            padding: 12px 20px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
+            padding: 20px;
         }
-
-        .upload-btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .clear-btn {
-            margin: 0 24px 16px;
-            padding: 8px 16px;
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .clear-btn:hover {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-
-        .search-container {
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .search-box {
-            position: relative;
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 40px;
             width: 100%;
+            max-width: 900px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-
-        .search-box input {
-            width: 100%;
-            padding: 10px 16px 10px 40px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--content-bg);
-            color: var(--text-primary);
-            font-size: 0.875rem;
+        
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+        .mb-8 { margin-bottom: 32px; }
+        .mt-8 { margin-top: 32px; }
+        .pt-6 { padding-top: 24px; }
+        
+        .bg-blue-600 { background-color: #2563eb; }
+        .bg-amber-500 { background-color: #f59e0b; }
+        .text-white { color: #ffffff; }
+        .text-slate-500 { color: #64748b; }
+        .text-slate-600 { color: #475569; }
+        .text-slate-900 { color: #0f172a; }
+        .text-blue-600 { color: #2563eb; }
+        .text-amber-600 { color: #d97706; }
+        
+        .inline-block { display: inline-block; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .gap-1 { gap: 4px; }
+        
+        .grid { display: grid; }
+        @media (min-width: 768px) {
+            .md-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
         }
-
-        .search-box input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .search-box svg {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            width: 18px;
-            height: 18px;
-        }
-
-        .filter-tags {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-        }
-
-        .tag {
-            padding: 4px 12px;
-            background: var(--content-bg);
-            border: 1px solid var(--border);
+        .gap-6 { gap: 24px; }
+        
+        .w-10 { width: 40px; height: 40px; }
+        .w-8 { width: 32px; height: 32px; }
+        .w-4 { width: 16px; height: 16px; }
+        .w-16 { width: 64px; height: 64px; }
+        .h-16 { height: 64px; }
+        .h-10 { height: 40px; }
+        
+        .rounded-2xl { border-radius: 16px; }
+        .rounded-full { border-radius: 9999px; }
+        .rounded-xl { border-radius: 12px; }
+        
+        .p-4 { padding: 16px; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        .font-black { font-weight: 800; }
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        
+        .text-3xl { font-size: 30px; line-height: 36px; }
+        .text-2xl { font-size: 24px; line-height: 32px; }
+        .text-xl { font-size: 20px; line-height: 28px; }
+        .text-sm { font-size: 14px; line-height: 20px; }
+        
+        .border-t { border-top: 1px solid #e2e8f0; }
+        
+        /* Portal Cards */
+        .portal-card {
+            border: 2px solid #e2e8f0;
             border-radius: 20px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-
-        .tag:hover, .tag.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .doc-list-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-            position: relative;
-        }
-
-        .doc-list {
-            min-height: 300px;
-        }
-
-        .category {
-            margin-bottom: 16px;
-        }
-
-        .category-title {
-            padding: 8px 16px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .doc-item {
-            padding: 12px 16px;
-            margin: 4px 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all 0.2s;
-            border: 1px solid transparent;
-            position: relative;
-        }
-
-        .doc-item:hover {
-            background: var(--content-bg);
-            border-color: var(--border);
-            transform: translateX(4px);
-        }
-
-        .doc-item.active {
-            background: var(--accent);
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
-        }
-
-        .doc-item.active .doc-meta, .doc-item.active .doc-path {
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .doc-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            position: relative;
-        }
-
-        .doc-item.active .doc-icon {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .local-badge {
-            position: absolute;
-            bottom: -2px;
-            right: -2px;
-            background: var(--success);
-            color: white;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid white;
-        }
-
-        .doc-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .doc-title {
-            font-weight: 500;
-            font-size: 0.875rem;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .doc-path {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            font-family: 'Courier New', monospace;
-            margin-top: 2px;
-            opacity: 0.8;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .doc-meta {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            display: flex;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .pagination {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 16px;
-            border-top: 1px solid var(--border);
-            background: var(--sidebar-bg);
-        }
-
-        .page-btn {
-            padding: 6px 12px;
-            border: 1px solid var(--border);
-            background: var(--content-bg);
-            color: var(--text-primary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s;
-        }
-
-        .page-btn:hover:not(:disabled) {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .page-info {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            padding: 0 12px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--content-bg);
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 24px;
-        }
-
-        .dropzone {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 40px 20px;
+            padding: 32px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
-            background: var(--sidebar-bg);
-        }
-
-        .dropzone:hover, .dropzone.dragover {
-            border-color: var(--accent);
-            background: rgba(59, 130, 246, 0.05);
-        }
-
-        .dropzone svg {
-            width: 48px;
-            height: 48px;
-            color: var(--accent);
-            margin-bottom: 12px;
-        }
-
-        .dropzone-text {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .upload-progress {
-            margin-top: 20px;
-            display: none;
-        }
-
-        .upload-progress.active {
-            display: block;
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.875rem;
-            margin-bottom: 8px;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: var(--border);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--accent);
-            width: 0%;
-            transition: width 0.3s;
-            border-radius: 4px;
-        }
-
-        .github-path {
-            margin-top: 16px;
-            padding: 12px;
-            background: #f1f5f9;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            border-left: 3px solid var(--accent);
-            word-break: break-all;
-        }
-
-        .github-path-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: var(--accent);
-            font-weight: 600;
-            margin-bottom: 4px;
-            display: block;
-        }
-
-        .viewer {
-            display: flex;
-            flex-direction: column;
-            background: #52525b;
-            position: relative;
-        }
-
-        .viewer-toolbar {
-            height: var(--header-height);
-            background: var(--content-bg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
-
-        .toolbar-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .doc-title-main {
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .toolbar-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: 1px solid var(--border);
-            background: var(--content-bg);
-            color: var(--text-primary);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-
-        .btn:hover {
-            background: var(--sidebar-bg);
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-        }
-
-        .btn-icon {
-            padding: 8px;
-        }
-
-        .zoom-controls {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px;
-            background: var(--sidebar-bg);
-            border-radius: 6px;
-            margin-right: 12px;
-        }
-
-        .zoom-level {
-            min-width: 60px;
-            text-align: center;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .frame-container {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            background: #52525b;
-        }
-
-        #doc-frame {
-            width: 100%;
-            height: 100%;
-            border: none;
+            transition: all 0.3s;
             background: white;
         }
-
-        .loading-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            z-index: 20;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
+        .portal-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
-
-        .loading-overlay.active {
-            opacity: 1;
-            pointer-events: all;
+        .portal-card.admin:hover {
+            border-color: #f59e0b;
+            box-shadow: 0 20px 25px -5px rgba(245, 158, 11, 0.2);
         }
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-left-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        
+        /* Form Styles */
+        .max-w-md { max-width: 448px; margin: 0 auto; }
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
             margin-bottom: 16px;
+            font-size: 15px;
+            font-family: inherit;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .input-field:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
-
-        .progress-bar-container {
-            width: 200px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            margin-top: 12px;
-            overflow: hidden;
-        }
-
-        .progress-fill-loading {
-            height: 100%;
-            background: var(--accent);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .error-state {
-            position: absolute;
-            inset: 0;
-            background: var(--content-bg);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 40px;
-        }
-
-        .error-state.active {
-            display: flex;
-        }
-
-        .toast-container {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .toast {
-            background: var(--primary);
+        
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
-            padding: 12px 20px;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+            font-family: inherit;
+            font-size: 15px;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-admin {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+        }
+        
+        /* Utility backgrounds */
+        .bg-blue-100 { background-color: #dbeafe; color: #2563eb; }
+        .bg-amber-100 { background-color: #fef3c7; color: #d97706; }
+        
+        /* Turnstile */
+        .turnstile-container {
+            margin: 20px 0;
+            min-height: 65px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 12px;
             border-radius: 8px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .alert-error { 
+            background: #fee2e2; 
+            color: #991b1b; 
+            border: 1px solid #fecaca; 
+        }
+        
+        /* Loading */
+        .loading-spinner {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden { display: none !important; }
+        
+        /* Back button */
+        .back-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            animation: slideIn 0.3s ease;
-            font-size: 0.875rem;
-            max-width: 400px;
+            gap: 4px;
         }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .toast.error { background: var(--danger); }
-        .toast.success { background: var(--success); }
-
-        .storage-indicator {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            background: rgba(255,255,255,0.8);
-            padding: 2px 8px;
-            border-radius: 4px;
-            pointer-events: none;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                grid-template-columns: 1fr;
-            }
-            
-            .mobile-header {
-                display: flex;
-            }
-            
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: var(--header-height);
-                bottom: 0;
-                width: 100%;
-                z-index: 100;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            
-            .viewer {
-                margin-top: var(--header-height);
-                height: calc(100vh - var(--header-height));
-            }
-            
-            .zoom-controls {
-                display: none;
-            }
-        }
+        .back-btn:hover { color: #1e293b; }
+        
+        a { color: #2563eb; text-decoration: none; font-weight: 700; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="mobile-header">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <div class="logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-            </svg>
-            <span>Engineering Portal</span>
-        </div>
-    </div>
-
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>
-                <span>Engineering Portal</span>
-            </div>
-            <div class="subtitle">Persistent Storage System</div>
-        </div>
-
-        <button class="upload-btn" onclick="openUploadModal()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            Upload New PDF
-        </button>
-
-        <button class="clear-btn" onclick="clearLocalStorage()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-            Clear Local Files
-        </button>
-
-        <div class="search-container">
-            <div class="search-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input type="text" id="searchInput" placeholder="Search manuals..." onkeyup="filterDocs()">
-            </div>
-            <div class="filter-tags">
-                <span class="tag active" onclick="filterCategory('all', this)">All</span>
-                <span class="tag" onclick="filterCategory('plc', this)">PLC</span>
-                <span class="tag" onclick="filterCategory('sensors', this)">Sensors</span>
-                <span class="tag" onclick="filterCategory('network', this)">Network</span>
-            </div>
-        </div>
-
-        <div class="doc-list-container" id="docListContainer">
-            <div class="doc-list" id="docList"></div>
-        </div>
-
-        <div class="pagination" id="pagination">
-            <button class="page-btn" onclick="changePage(-1)" id="prevBtn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-                Prev
-            </button>
-            <span class="page-info" id="pageInfo">Page 1 of 1</span>
-            <button class="page-btn" onclick="changePage(1)" id="nextBtn">
-                Next
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </button>
-        </div>
-    </aside>
-
-    <div class="modal-overlay" id="uploadModal" onclick="closeUploadModal(event)">
-        <div class="modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3>Upload PDF to Repository</h3>
-                <button class="close-btn" onclick="closeUploadModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <div class="dropzone-text">
-                        Drag & drop PDF here<br>
-                        <strong>or click to browse</strong>
-                    </div>
+    <div class="glass-panel">
+        <!-- Selection Screen -->
+        <div id="selectionScreen">
+            <div class="text-center mb-8">
+                <div class="bg-blue-600 p-4 rounded-2xl text-white inline-block mb-4 shadow-lg">
+                    <i data-lucide="activity" class="w-10 h-10"></i>
                 </div>
-                <input type="file" id="fileInput" class="file-input" accept=".pdf" onchange="handleFileSelect(event)">
-                
-                <div class="upload-progress" id="uploadProgress">
-                    <div class="progress-header">
-                        <span id="uploadFileName">file.pdf</span>
-                        <span id="uploadPercent">0%</span>
+                <h1 class="text-3xl font-black text-slate-900 mb-2">FleetSync Pro</h1>
+                <p class="text-slate-500">Select your access portal</p>
+            </div>
+
+            <div class="grid md-grid-cols-2 gap-6">
+                <div class="portal-card" onclick="showUserLogin()">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
                     </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="uploadProgressFill"></div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">User Portal</h3>
+                    <p class="text-sm text-slate-500 mb-4">Fleet inventory & analytics</p>
+                    <span class="text-blue-600 font-semibold text-sm">Access Dashboard →</span>
+                </div>
+
+                <div class="portal-card admin" onclick="showAdminLogin()">
+                    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="shield" class="w-8 h-8"></i>
                     </div>
-                    <div class="github-path">
-                        <span class="github-path-label">Auto-generated Path (GitHub)</span>
-                        <div id="githubPath">github.com/your-org/manuals/</div>
-                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Admin Portal</h3>
+                    <p class="text-sm text-slate-500 mb-4">User management & system control</p>
+                    <span class="text-amber-600 font-semibold text-sm">Admin Access →</span>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <main class="viewer">
-        <div class="viewer-toolbar">
-            <div class="toolbar-left">
-                <div class="doc-title-main" id="currentTitle">Select a document to view</div>
+            <div class="mt-8 pt-6 text-center">
+                <p class="text-sm text-slate-600">Don't have an account? <a href="register.html">Request Access</a></p>
             </div>
+        </div>
+
+        <!-- User Login -->
+        <div id="userLoginScreen" class="hidden max-w-md">
+            <button class="back-btn" onclick="showSelection()">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+            </button>
             
-            <div class="toolbar-right">
-                <div class="zoom-controls">
-                    <button class="btn btn-icon" onclick="zoom(-0.1)">−</button>
-                    <span class="zoom-level" id="zoomLevel">100%</span>
-                    <button class="btn btn-icon" onclick="zoom(0.1)">+</button>
+            <div class="text-center mb-8">
+                <div class="bg-blue-600 p-4 rounded-2xl text-white inline-block mb-4">
+                    <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900">User Login</h2>
+            </div>
+
+            <div id="userError" class="hidden alert alert-error"></div>
+
+            <form id="userLoginForm">
+                <input type="text" id="userUsername" class="input-field" placeholder="Username" required>
+                <input type="password" id="userPassword" class="input-field" placeholder="Password" required>
+                
+                <div class="turnstile-container">
+                    <div class="cf-turnstile" 
+                         data-sitekey="0x4AAAAAAC_BjsQtA7pfoO_G" 
+                         data-callback="onUserTurnstileSuccess"
+                         data-theme="light"
+                         id="userTurnstile"></div>
                 </div>
                 
-                <button class="btn" onclick="toggleFullscreen()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-                    </svg>
-                    Fullscreen
+                <button type="submit" class="btn-primary" id="userLoginBtn" disabled>
+                    <span id="userBtnText">Complete CAPTCHA First</span>
+                    <span id="userBtnLoader" class="loading-spinner hidden"></span>
                 </button>
-            </div>
+            </form>
         </div>
 
-        <div class="frame-container" id="frameContainer">
-            <div class="loading-overlay" id="loadingOverlay">
-                <div class="spinner"></div>
-                <div>Loading document...</div>
-                <div class="progress-bar-container">
-                    <div class="progress-fill-loading" id="progressFill"></div>
+        <!-- Admin Login -->
+        <div id="adminLoginScreen" class="hidden max-w-md">
+            <button class="back-btn" onclick="showSelection()">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+            </button>
+            
+            <div class="text-center mb-8">
+                <div class="bg-amber-500 p-4 rounded-2xl text-white inline-block mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
                 </div>
+                <h2 class="text-2xl font-bold text-slate-900">Admin Login</h2>
             </div>
 
-            <div class="error-state" id="errorState">
-                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-                <h3>Failed to Load Document</h3>
-                <p>The document could not be loaded. It may have been cleared from storage.</p>
-                <button class="btn btn-primary" onclick="retryLoad()" style="margin-top: 16px;">Retry</button>
-            </div>
+            <div id="adminError" class="hidden alert alert-error"></div>
 
-            <iframe id="doc-frame" src=""></iframe>
-            <div class="storage-indicator" id="storageIndicator"></div>
+            <form id="adminLoginForm">
+                <input type="text" id="adminUsername" class="input-field" placeholder="Admin Username" required>
+                <input type="password" id="adminPassword" class="input-field" placeholder="Admin Password" required>
+                
+                <div class="turnstile-container">
+                    <div class="cf-turnstile" 
+                         data-sitekey="0x4AAAAAAC_BjsQtA7pfoO_G" 
+                         data-callback="onAdminTurnstileSuccess"
+                         data-theme="light"
+                         id="adminTurnstile"></div>
+                </div>
+                
+                <button type="submit" class="btn-primary btn-admin" id="adminLoginBtn" disabled>
+                    <span id="adminBtnText">Complete CAPTCHA First</span>
+                    <span id="adminBtnLoader" class="loading-spinner hidden"></span>
+                </button>
+            </form>
         </div>
-    </main>
+    </div>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    <script>
-        // Database setup
-        const DB_NAME = 'ManualPortalDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'pdfs';
-        
-        let db = null;
-        let documents = [
-            { id: 1, title: "PLC Setup Guide V2.1", file: "manuals/PLC_Setup_V1.pdf", category: "plc", size: "2.4 MB", type: "Setup", githubPath: "github.com/company/manuals/plc/PLC_Setup_V1.pdf", date: "2024-01-15", isLocal: false },
-            { id: 2, title: "Sensor Calibration Protocol", file: "manuals/Sensor_Calibration.pdf", category: "sensors", size: "1.8 MB", type: "Calibration", githubPath: "github.com/company/manuals/sensors/Sensor_Calibration.pdf", date: "2024-01-12", isLocal: false },
-            { id: 3, title: "Modbus TCP Wiring Map", file: "manuals/Modbus_Wiring.pdf", category: "network", size: "3.2 MB", type: "Diagram", githubPath: "github.com/company/manuals/network/Modbus_Wiring.pdf", date: "2024-01-10", isLocal: false }
-        ];
-        
-        let currentPage = 1;
-        const itemsPerPage = 5;
-        let currentDoc = null;
-        let zoomScale = 1;
-        let currentFilter = 'all';
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQRKnsV0aFglvXU52V8LkeRmb3godaKyg",
+            databaseURL: "https://rk-tech-eb179-default-rtdb.firebaseio.com",
+            projectId: "rk-tech-eb179"
+        };
 
-        // Initialize IndexedDB
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => {
-                    db = request.result;
-                    resolve();
-                };
-                
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                        store.createIndex('category', 'category', { unique: false });
-                    }
-                };
-            });
-        }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        // Load stored PDFs from IndexedDB
-        async function loadStoredPDFs() {
-            if (!db) return;
+        let userTurnstileToken = null;
+        let adminTurnstileToken = null;
+
+        window.onUserTurnstileSuccess = function(token) {
+            userTurnstileToken = token;
+            document.getElementById('userLoginBtn').disabled = false;
+            document.getElementById('userBtnText').textContent = 'Login';
+        };
+
+        window.onAdminTurnstileSuccess = function(token) {
+            adminTurnstileToken = token;
+            document.getElementById('adminLoginBtn').disabled = false;
+            document.getElementById('adminBtnText').textContent = 'Access Admin Panel';
+        };
+
+        // REMOVED: Auto-create admin (causes permission denied)
+        // Instead, manually create admin in Firebase Console once:
+        // Path: app_users/admin
+        // {
+        //   "username": "admin",
+        //   "password": "admin123",
+        //   "firstName": "System",
+        //   "lastName": "Administrator",
+        //   "role": "admin",
+        //   "status": "active",
+        //   "email": "admin@fleetsync.pro"
+        // }
+
+        window.showSelection = () => {
+            document.getElementById('selectionScreen').classList.remove('hidden');
+            document.getElementById('userLoginScreen').classList.add('hidden');
+            document.getElementById('adminLoginScreen').classList.add('hidden');
             
-            try {
-                const transaction = db.transaction([STORE_NAME], 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.getAll();
-                
-                request.onsuccess = () => {
-                    const storedDocs = request.result;
-                    // Merge with default docs, avoiding duplicates
-                    storedDocs.forEach(doc => {
-                        const exists = documents.find(d => d.id === doc.id);
-                        if (!exists) {
-                            // Recreate blob URL from stored arraybuffer
-                            if (doc.fileData) {
-                                const blob = new Blob([doc.fileData], { type: 'application/pdf' });
-                                doc.file = URL.createObjectURL(blob);
-                                doc.isLocal = true;
-                            }
-                            documents.push(doc);
-                        }
-                    });
-                    renderDocList();
-                    updateStorageIndicator();
-                };
-            } catch (e) {
-                console.error('Error loading stored PDFs:', e);
+            if (typeof turnstile !== 'undefined') {
+                turnstile.reset('#userTurnstile');
+                turnstile.reset('#adminTurnstile');
             }
-        }
+            userTurnstileToken = null;
+            adminTurnstileToken = null;
+        };
 
-        // Store PDF in IndexedDB
-        async function storePDF(doc, fileData) {
-            if (!db) return;
-            
-            try {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                
-                // Store the binary data
-                const storedDoc = {
-                    ...doc,
-                    fileData: fileData // ArrayBuffer
-                };
-                
-                await store.put(storedDoc);
-            } catch (e) {
-                console.error('Error storing PDF:', e);
-            }
-        }
+        window.showUserLogin = () => {
+            document.getElementById('selectionScreen').classList.add('hidden');
+            document.getElementById('userLoginScreen').classList.remove('hidden');
+            document.getElementById('userError').classList.add('hidden');
+            document.getElementById('userLoginBtn').disabled = true;
+            document.getElementById('userBtnText').textContent = 'Complete CAPTCHA First';
+            userTurnstileToken = null;
+        };
 
-        // Delete all stored PDFs
-        async function clearLocalStorage() {
-            if (!db) return;
+        window.showAdminLogin = () => {
+            document.getElementById('selectionScreen').classList.add('hidden');
+            document.getElementById('adminLoginScreen').classList.remove('hidden');
+            document.getElementById('adminError').classList.add('hidden');
+            document.getElementById('adminLoginBtn').disabled = true;
+            document.getElementById('adminBtnText').textContent = 'Complete CAPTCHA First';
+            adminTurnstileToken = null;
+        };
+
+        async function handleLogin(username, password, type, btnId, btnTextId, loaderId, errorId, turnstileToken) {
+            const btn = document.getElementById(btnId);
+            const btnText = document.getElementById(btnTextId);
+            const loader = document.getElementById(loaderId);
+            const errorBox = document.getElementById(errorId);
             
-            if (!confirm('Are you sure you want to delete all uploaded PDFs? This cannot be undone.')) {
+            if (!turnstileToken) {
+                errorBox.textContent = 'Please complete the human verification';
+                errorBox.classList.remove('hidden');
                 return;
             }
             
+            btn.disabled = true;
+            btnText.textContent = 'Verifying...';
+            loader.classList.remove('hidden');
+            errorBox.classList.add('hidden');
+
             try {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                await store.clear();
+                // NOTE: Server-side verification of Turnstile token recommended
+                const snapshot = await get(ref(db, 'app_users'));
                 
-                // Remove local docs from array
-                documents = documents.filter(d => !d.isLocal);
-                currentPage = 1;
-                renderDocList();
-                updateStorageIndicator();
-                showToast('Local storage cleared', 'success');
-                
-                // Clear viewer if showing local doc
-                if (currentDoc) {
-                    const current = documents.find(d => d.id === currentDoc);
-                    if (!current) {
-                        document.getElementById('doc-frame').src = '';
-                        document.getElementById('currentTitle').textContent = 'Select a document to view';
-                        currentDoc = null;
-                    }
+                if (!snapshot.exists()) {
+                    throw new Error('No users found. Create admin manually in Firebase Console.');
                 }
-            } catch (e) {
-                console.error('Error clearing storage:', e);
-                showToast('Error clearing storage', 'error');
+
+                let foundUser = null;
+                let userKey = null;
+
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    if ((user.username === username || user.email === username) && user.password === password) {
+                        foundUser = user;
+                        userKey = child.key;
+                    }
+                });
+
+                if (!foundUser) throw new Error('Invalid credentials');
+                if (foundUser.status !== 'active') throw new Error('Account inactive');
+                if (type === 'admin' && foundUser.role !== 'admin') throw new Error('Not an admin');
+
+                const sessionData = {
+                    uid: userKey,
+                    username: foundUser.username,
+                    name: foundUser.name || `${foundUser.firstName} ${foundUser.lastName}`,
+                    role: foundUser.role,
+                    email: foundUser.email,
+                    loginTime: new Date().toISOString()
+                };
+
+                sessionStorage.setItem('fleetsync_session', JSON.stringify(sessionData));
+                await set(ref(db, `app_users/${userKey}/lastLogin`), new Date().toISOString());
+
+                window.location.href = type === 'admin' ? 'dashboard.html?page=admin' : 'dashboard.html';
+
+            } catch (error) {
+                errorBox.textContent = error.message;
+                errorBox.classList.remove('hidden');
+                btn.disabled = false;
+                btnText.textContent = type === 'admin' ? 'Access Admin Panel' : 'Login';
+                loader.classList.add('hidden');
             }
         }
 
-        function updateStorageIndicator() {
-            const localCount = documents.filter(d => d.isLocal).length;
-            const indicator = document.getElementById('storageIndicator');
-            if (localCount > 0) {
-                indicator.textContent = `${localCount} local file${localCount > 1 ? 's' : ''} stored`;
-                indicator.style.display = 'block';
-            } else {
-                indicator.style.display = 'none';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                await initDB();
-                await loadStoredPDFs();
-                renderDocList();
-                
-                // Drag and drop handlers
-                const dropzone = document.getElementById('dropzone');
-                dropzone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    dropzone.classList.add('dragover');
-                });
-                dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-                dropzone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dropzone.classList.remove('dragover');
-                    if (e.dataTransfer.files.length > 0) processUpload(e.dataTransfer.files[0]);
-                });
-            } catch (e) {
-                console.error('Initialization error:', e);
-                showToast('Storage initialization failed', 'error');
-            }
+        document.getElementById('userLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLogin(
+                document.getElementById('userUsername').value.trim(),
+                document.getElementById('userPassword').value,
+                'user', 'userLoginBtn', 'userBtnText', 'userBtnLoader', 'userError',
+                userTurnstileToken
+            );
         });
 
-        function renderDocList() {
-            const list = document.getElementById('docList');
-            let filtered = currentFilter === 'all' 
-                ? documents 
-                : documents.filter(d => d.category === currentFilter);
-            
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            filtered = filtered.filter(d => 
-                d.title.toLowerCase().includes(searchTerm) || 
-                d.type.toLowerCase().includes(searchTerm)
+        document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLogin(
+                document.getElementById('adminUsername').value.trim(),
+                document.getElementById('adminPassword').value,
+                'admin', 'adminLoginBtn', 'adminBtnText', 'adminBtnLoader', 'adminError',
+                adminTurnstileToken
             );
+        });
 
-            const totalPages = Math.ceil(filtered.length / itemsPerPage);
-            if (currentPage > totalPages) currentPage = totalPages || 1;
-            
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const pageItems = filtered.slice(start, end);
-
-            const grouped = pageItems.reduce((acc, doc) => {
-                if (!acc[doc.category]) acc[doc.category] = [];
-                acc[doc.category].push(doc);
-                return acc;
-            }, {});
-
-            let html = '';
-            for (const [category, docs] of Object.entries(grouped)) {
-                html += `
-                    <div class="category">
-                        <div class="category-title">
-                            ${category.charAt(0).toUpperCase() + category.slice(1)}
-                            <span>${docs.length} items</span>
-                        </div>
-                        ${docs.map(doc => `
-                            <div class="doc-item" onclick="loadDocument(${doc.id}, this)" data-id="${doc.id}">
-                                <div class="doc-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                    </svg>
-                                    ${doc.isLocal ? '<span class="local-badge" title="Stored locally">L</span>' : ''}
-                                </div>
-                                <div class="doc-info">
-                                    <div class="doc-title">${doc.title}</div>
-                                    <div class="doc-path">${doc.githubPath || doc.file}</div>
-                                    <div class="doc-meta">${doc.type} • ${doc.size} • ${doc.date}</div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            list.innerHTML = html || '<div style="padding: 24px; text-align: center; color: var(--text-secondary);">No documents found</div>';
-            updatePagination(filtered.length);
-        }
-
-        function updatePagination(totalItems) {
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages || 1}`;
-            document.getElementById('prevBtn').disabled = currentPage === 1;
-            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
-        }
-
-        function changePage(direction) {
-            currentPage += direction;
-            renderDocList();
-        }
-
-        function loadDocument(id, element) {
-            const doc = documents.find(d => d.id === id);
-            if (!doc) return;
-            
-            currentDoc = id;
-            
-            document.querySelectorAll('.doc-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-            document.getElementById('currentTitle').textContent = doc.title;
-            
-            const overlay = document.getElementById('loadingOverlay');
-            const progressFill = document.getElementById('progressFill');
-            const errorState = document.getElementById('errorState');
-            const frame = document.getElementById('doc-frame');
-            
-            overlay.classList.add('active');
-            errorState.classList.remove('active');
-            
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 30;
-                if (progress > 90) progress = 90;
-                progressFill.style.width = progress + '%';
-            }, 200);
-
-            setTimeout(() => {
-                clearInterval(interval);
-                progressFill.style.width = '100%';
-                
-                // For local files, file is already a blob URL
-                // For remote files, it's a path
-                const filePath = doc.isLocal ? doc.file : doc.file;
-                
-                frame.src = filePath + "#toolbar=0&navpanes=0";
-                
-                frame.onload = () => {
-                    setTimeout(() => overlay.classList.remove('active'), 300);
-                };
-                
-                frame.onerror = () => {
-                    overlay.classList.remove('active');
-                    errorState.classList.add('active');
-                };
-            }, 500);
-            
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('open');
-            }
-        }
-
-        function openUploadModal() {
-            document.getElementById('uploadModal').classList.add('active');
-            document.getElementById('uploadProgress').classList.remove('active');
-        }
-
-        function closeUploadModal(e) {
-            if (!e || e.target.id === 'uploadModal' || e.target.className === 'close-btn') {
-                document.getElementById('uploadModal').classList.remove('active');
-                document.getElementById('fileInput').value = '';
-            }
-        }
-
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file) processUpload(file);
-        }
-
-        async function processUpload(file) {
-            if (!file.name.endsWith('.pdf')) {
-                showToast('Please select a PDF file', 'error');
-                return;
-            }
-
-            const progressDiv = document.getElementById('uploadProgress');
-            const progressFill = document.getElementById('uploadProgressFill');
-            const percentSpan = document.getElementById('uploadPercent');
-            const fileNameSpan = document.getElementById('uploadFileName');
-            const pathDiv = document.getElementById('githubPath');
-            
-            progressDiv.classList.add('active');
-            fileNameSpan.textContent = file.name;
-            
-            const category = detectCategory(file.name);
-            const githubPath = `github.com/company/manuals/${category}/${file.name}`;
-            pathDiv.textContent = githubPath;
-            
-            // Read file as array buffer for storage
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const arrayBuffer = e.target.result;
-                
-                // Simulate progress
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += Math.random() * 25;
-                    if (progress > 100) progress = 100;
-                    
-                    progressFill.style.width = progress + '%';
-                    percentSpan.textContent = Math.round(progress) + '%';
-                    
-                    if (progress === 100) {
-                        clearInterval(interval);
-                        setTimeout(async () => {
-                            // Create blob URL for immediate use
-                            const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-                            const blobUrl = URL.createObjectURL(blob);
-                            
-                            const newDoc = {
-                                id: Date.now(),
-                                title: file.name.replace('.pdf', ''),
-                                file: blobUrl,
-                                category: category,
-                                size: formatFileSize(file.size),
-                                type: "Uploaded",
-                                githubPath: githubPath,
-                                date: new Date().toISOString().split('T')[0],
-                                isLocal: true
-                            };
-                            
-                            // Store in IndexedDB
-                            await storePDF(newDoc, arrayBuffer);
-                            
-                            documents.unshift(newDoc);
-                            currentPage = 1;
-                            renderDocList();
-                            updateStorageIndicator();
-                            
-                            showToast('PDF saved permanently!', 'success');
-                            closeUploadModal();
-                            
-                            setTimeout(() => {
-                                const newItem = document.querySelector(`[data-id="${newDoc.id}"]`);
-                                if (newItem) loadDocument(newDoc.id, newItem);
-                            }, 500);
-                            
-                        }, 500);
-                    }
-                }, 150);
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-
-        function detectCategory(filename) {
-            const lower = filename.toLowerCase();
-            if (lower.includes('plc') || lower.includes('safety') || lower.includes('trouble')) return 'plc';
-            if (lower.includes('sensor') || lower.includes('calibration')) return 'sensors';
-            if (lower.includes('modbus') || lower.includes('ethernet') || lower.includes('hmi') || lower.includes('network')) return 'network';
-            return 'misc';
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
-        function zoom(delta) {
-            zoomScale = Math.max(0.5, Math.min(2.0, zoomScale + delta));
-            document.getElementById('zoomLevel').textContent = Math.round(zoomScale * 100) + '%';
-            
-            const frame = document.getElementById('doc-frame');
-            if (currentDoc) {
-                const doc = documents.find(d => d.id === currentDoc);
-                const base = doc.isLocal ? doc.file : doc.file;
-                frame.src = base + `#toolbar=0&navpanes=0&zoom=${Math.round(zoomScale * 100)}`;
-            }
-        }
-
-        function filterDocs() {
-            currentPage = 1;
-            renderDocList();
-        }
-
-        function filterCategory(cat, el) {
-            currentFilter = cat;
-            currentPage = 1;
-            document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
-            renderDocList();
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function retryLoad() {
-            if (currentDoc) {
-                const el = document.querySelector(`[data-id="${currentDoc}"]`);
-                if (el) loadDocument(currentDoc, el);
-            }
-        }
-
-        function showToast(msg, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
-            toast.innerHTML = `<span>${icon}</span> ${msg}`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+        lucide.createIcons();
     </script>
 </body>
 </html>
