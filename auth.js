@@ -1,385 +1,203 @@
-// Firebase Imports
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
 
-// Firebase Configuration
-// IMPORTANT: In production, use environment variables for these values
-const firebaseConfig = {
-    apiKey: "AIzaSyDQRKnsV0aFglvXU52V8LkeRmb3godaKyg",
-    authDomain: "rk-tech-eb179.firebaseapp.com",
-    databaseURL: "https://rk-tech-eb179-default-rtdb.firebaseio.com",
-    projectId: "rk-tech-eb179",
-    storageBucket: "rk-tech-eb179.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abc123def456"
-};
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-// Global State
-let userTurnstileToken = null;
-let adminTurnstileToken = null;
-
-// Security Manager: Rate Limiting
-const SecurityManager = {
-    attempts: 0,
-    locked: false,
-    lockoutTime: 0,
-    
-    checkLockout() {
-        if (this.locked) {
-            const now = Date.now();
-            if (now < this.lockoutTime) {
-                const remaining = Math.ceil((this.lockoutTime - now) / 1000);
-                this.showLockout(remaining);
-                return false;
-            } else {
-                this.unlock();
-            }
-        }
-        return true;
-    },
-    
-    recordAttempt() {
-        this.attempts++;
-        if (this.attempts >= 5) {
-            this.lock();
-        }
-        return this.attempts < 5;
-    },
-    
-    lock() {
-        this.locked = true;
-        this.lockoutTime = Date.now() + 30000; // 30 seconds
-        this.showLockout(30);
-        sessionStorage.setItem('auth_lockout', this.lockoutTime);
-    },
-    
-    unlock() {
-        this.locked = false;
-        this.attempts = 0;
-        sessionStorage.removeItem('auth_lockout');
-        document.getElementById('rateLimitOverlay').classList.add('hidden');
-    },
-    
-    showLockout(seconds) {
-        const overlay = document.getElementById('rateLimitOverlay');
-        const countdown = document.getElementById('countdown');
-        overlay.classList.remove('hidden');
-        
-        let remaining = seconds;
-        countdown.textContent = remaining;
-        
-        const timer = setInterval(() => {
-            remaining--;
-            countdown.textContent = remaining;
-            if (remaining <= 0) {
-                clearInterval(timer);
-                this.unlock();
-            }
-        }, 1000);
-    },
-    
-    init() {
-        const stored = sessionStorage.getItem('auth_lockout');
-        if (stored) {
-            const time = parseInt(stored);
-            if (time > Date.now()) {
-                this.locked = true;
-                this.lockoutTime = time;
-                this.showLockout(Math.ceil((time - Date.now()) / 1000));
-            } else {
-                sessionStorage.removeItem('auth_lockout');
-            }
-        }
-    }
-};
-
-// Initialize Security
-SecurityManager.init();
-
-// CSRF Token Generation
-function generateCSRFToken() {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return btoa(String.fromCharCode.apply(null, array));
+body { 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
-// Store CSRF Token
-const csrfToken = generateCSRFToken();
-sessionStorage.setItem('csrf_token', csrfToken);
-
-// Turnstile Callbacks (Must be on window object)
-window.onUserTurnstileSuccess = function(token) {
-    userTurnstileToken = token;
-    document.getElementById('userLoginBtn').disabled = false;
-    document.getElementById('userBtnText').textContent = 'Secure Login';
-};
-
-window.onAdminTurnstileSuccess = function(token) {
-    adminTurnstileToken = token;
-    document.getElementById('adminLoginBtn').disabled = false;
-    document.getElementById('adminBtnText').textContent = 'Access Admin Panel';
-};
-
-// UI Functions
-window.showSelection = () => {
-    document.getElementById('selectionScreen').classList.remove('hidden');
-    document.getElementById('userLoginScreen').classList.add('hidden');
-    document.getElementById('adminLoginScreen').classList.add('hidden');
-    
-    // Reset Turnstile
-    if (typeof turnstile !== 'undefined') {
-        turnstile.reset('#userTurnstile');
-        turnstile.reset('#adminTurnstile');
-    }
-    userTurnstileToken = null;
-    adminTurnstileToken = null;
-    
-    // Clear sensitive fields
-    document.getElementById('userPassword').value = '';
-    document.getElementById('adminPassword').value = '';
-};
-
-window.showUserLogin = () => {
-    if (!SecurityManager.checkLockout()) return;
-    
-    document.getElementById('selectionScreen').classList.add('hidden');
-    document.getElementById('userLoginScreen').classList.remove('hidden');
-    document.getElementById('userError').classList.add('hidden');
-    document.getElementById('userLoginBtn').disabled = true;
-    document.getElementById('userBtnText').textContent = 'Complete CAPTCHA First';
-    userTurnstileToken = null;
-};
-
-window.showAdminLogin = () => {
-    if (!SecurityManager.checkLockout()) return;
-    
-    document.getElementById('selectionScreen').classList.add('hidden');
-    document.getElementById('adminLoginScreen').classList.remove('hidden');
-    document.getElementById('adminError').classList.add('hidden');
-    document.getElementById('adminLoginBtn').disabled = true;
-    document.getElementById('adminBtnText').textContent = 'Complete CAPTCHA First';
-    adminTurnstileToken = null;
-};
-
-window.togglePassword = (id) => {
-    const input = document.getElementById(id);
-    const icon = input.parentElement.querySelector('i');
-    
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.setAttribute('data-lucide', 'eye-off');
-    } else {
-        input.type = 'password';
-        icon.setAttribute('data-lucide', 'eye');
-    }
-    lucide.createIcons();
-};
-
-window.showForgotPassword = (type) => {
-    const email = prompt(`Enter your ${type} email address:`);
-    if (email && email.includes('@')) {
-        sendPasswordResetEmail(auth, email)
-            .then(() => alert('Password reset email sent! Check your inbox.'))
-            .catch(err => alert('Error: ' + err.message));
-    }
-};
-
-// Utility: Show Error
-function showError(element, message) {
-    element.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i> <span>${message}</span>`;
-    element.classList.remove('hidden');
-    lucide.createIcons();
+.glass-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 900px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-// Secure Login Handler
-async function handleSecureLogin(email, password, type, btnConfig, turnstileToken, rememberMe) {
-    const { btnId, btnTextId, loaderId, errorId } = btnConfig;
-    const btn = document.getElementById(btnId);
-    const btnText = document.getElementById(btnTextId);
-    const loader = document.getElementById(loaderId);
-    const errorBox = document.getElementById(errorId);
-    
-    // Security checks
-    if (!SecurityManager.checkLockout()) return;
-    
-    if (!turnstileToken) {
-        showError(errorBox, 'Please complete the human verification');
-        return;
-    }
-    
-    // Validate inputs
-    if (!email || !email.includes('@') || !email.includes('.')) {
-        showError(errorBox, 'Please enter a valid email address');
-        return;
-    }
-    
-    if (password.length < 8) {
-        showError(errorBox, 'Password must be at least 8 characters');
-        return;
-    }
+.text-center { text-align: center; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.mb-8 { margin-bottom: 32px; }
+.mt-8 { margin-top: 32px; }
+.pt-6 { padding-top: 24px; }
 
-    // Check CSRF
-    const storedToken = sessionStorage.getItem('csrf_token');
-    if (!storedToken) {
-        showError(errorBox, 'Security validation failed. Please refresh the page.');
-        return;
-    }
-    
-    // Set loading state
-    btn.disabled = true;
-    btnText.textContent = 'Authenticating...';
-    loader.classList.remove('hidden');
-    errorBox.classList.add('hidden');
+.bg-blue-600 { background-color: #2563eb; }
+.bg-amber-500 { background-color: #f59e0b; }
+.text-white { color: #ffffff; }
+.text-slate-500 { color: #64748b; }
+.text-slate-600 { color: #475569; }
+.text-slate-900 { color: #0f172a; }
+.text-blue-600 { color: #2563eb; }
+.text-amber-600 { color: #d97706; }
 
-    try {
-        // Set persistence
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-        
-        // Authenticate with Firebase Auth
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        
-        // Verify Turnstile token format
-        if (!turnstileToken || turnstileToken.length < 10) {
-            throw new Error('Invalid verification token');
-        }
-        
-        // Check user role in RTDB
-        const userRef = ref(db, `app_users/${user.uid}`);
-        const snapshot = await get(userRef);
-        
-        if (!snapshot.exists()) {
-            await auth.signOut();
-            throw new Error('User profile not found');
-        }
-        
-        const userData = snapshot.val();
-        
-        // Verify role
-        if (type === 'admin' && userData.role !== 'admin') {
-            await auth.signOut();
-            throw new Error('Access denied: Administrator privileges required');
-        }
-        
-        if (userData.status !== 'active') {
-            await auth.signOut();
-            throw new Error('Account suspended. Contact support.');
-        }
-        
-        // Create secure session
-        const sessionData = {
-            uid: user.uid,
-            email: user.email,
-            role: userData.role,
-            name: userData.name || (userData.firstName + ' ' + userData.lastName),
-            csrf: storedToken,
-            loginTime: new Date().toISOString(),
-            turnstileVerified: true
-        };
-        
-        // Store in sessionStorage
-        sessionStorage.setItem('fleetsync_session', JSON.stringify(sessionData));
-        
-        // Clear sensitive data
-        password = null;
-        
-        // Redirect
-        const redirectUrl = type === 'admin' ? 'dashboard.html?page=admin&auth=1' : 'dashboard.html?auth=1';
-        window.location.href = redirectUrl;
-        
-    } catch (error) {
-        SecurityManager.recordAttempt();
-        let message = 'Authentication failed';
-        
-        // Sanitize error messages
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-            message = 'Invalid email or password';
-        } else if (error.code === 'auth/too-many-requests') {
-            message = 'Too many failed attempts. Please try again later.';
-            SecurityManager.lock();
-        } else if (error.code === 'auth/invalid-email') {
-            message = 'Invalid email format';
-        } else if (error.code === 'auth/invalid-credential') {
-            message = 'Invalid credentials';
-        } else if (error.message) {
-            message = error.message;
-        }
-        
-        showError(errorBox, message);
-        btn.disabled = false;
-        btnText.textContent = type === 'admin' ? 'Access Admin Panel' : 'Secure Login';
-        loader.classList.add('hidden');
-        
-        // Reset Turnstile on error
-        if (typeof turnstile !== 'undefined') {
-            turnstile.reset(type === 'admin' ? '#adminTurnstile' : '#userTurnstile');
-        }
-    }
+.inline-block { display: inline-block; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.gap-1 { gap: 4px; }
+
+.grid { display: grid; }
+@media (min-width: 768px) {
+    .md-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+}
+.gap-6 { gap: 24px; }
+
+.w-10 { width: 40px; height: 40px; }
+.w-8 { width: 32px; height: 32px; }
+.w-4 { width: 16px; height: 16px; }
+.w-16 { width: 64px; height: 64px; }
+.h-16 { height: 64px; }
+.h-10 { height: 40px; }
+
+.rounded-2xl { border-radius: 16px; }
+.rounded-full { border-radius: 9999px; }
+.rounded-xl { border-radius: 12px; }
+
+.p-4 { padding: 16px; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+.font-black { font-weight: 800; }
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+
+.text-3xl { font-size: 30px; line-height: 36px; }
+.text-2xl { font-size: 24px; line-height: 32px; }
+.text-xl { font-size: 20px; line-height: 28px; }
+.text-sm { font-size: 14px; line-height: 20px; }
+
+.border-t { border-top: 1px solid #e2e8f0; }
+
+/* Portal Cards */
+.portal-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+}
+.portal-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+.portal-card.admin:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 20px 25px -5px rgba(245, 158, 11, 0.2);
 }
 
-// Event Listeners
-document.getElementById('userLoginForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    handleSecureLogin(
-        document.getElementById('userEmail').value.trim().toLowerCase(),
-        document.getElementById('userPassword').value,
-        'user',
-        {
-            btnId: 'userLoginBtn',
-            btnTextId: 'userBtnText',
-            loaderId: 'userBtnLoader',
-            errorId: 'userError'
-        },
-        userTurnstileToken,
-        document.getElementById('userRemember').checked
-    );
-});
-
-document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    handleSecureLogin(
-        document.getElementById('adminEmail').value.trim().toLowerCase(),
-        document.getElementById('adminPassword').value,
-        'admin',
-        {
-            btnId: 'adminLoginBtn',
-            btnTextId: 'adminBtnText',
-            loaderId: 'adminBtnLoader',
-            errorId: 'adminError'
-        },
-        adminTurnstileToken,
-        document.getElementById('adminRemember').checked
-    );
-});
-
-// Check for existing session on load
-const existingSession = sessionStorage.getItem('fleetsync_session');
-if (existingSession) {
-    try {
-        const session = JSON.parse(existingSession);
-        if (session.role === 'admin') {
-            document.getElementById('authWarning').classList.remove('hidden');
-        }
-    } catch(e) {
-        sessionStorage.removeItem('fleetsync_session');
-    }
+/* Form Styles */
+.max-w-md { max-width: 448px; margin: 0 auto; }
+.input-field {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    font-family: inherit;
+}
+.input-field:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
-// Initialize icons
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-});
+.btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 8px;
+    font-family: inherit;
+    font-size: 15px;
+}
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+}
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+.btn-admin {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+}
 
-// Security: Clear sensitive inputs on page unload
-window.addEventListener('beforeunload', () => {
-    const userPass = document.getElementById('userPassword');
-    const adminPass = document.getElementById('adminPassword');
-    if (userPass) userPass.value = '';
-    if (adminPass) adminPass.value = '';
-});
+/* Utility backgrounds */
+.bg-blue-100 { background-color: #dbeafe; color: #2563eb; }
+.bg-amber-100 { background-color: #fef3c7; color: #d97706; }
+
+/* Turnstile */
+.turnstile-container {
+    margin: 20px 0;
+    min-height: 65px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Alerts */
+.alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.alert-error { 
+    background: #fee2e2; 
+    color: #991b1b; 
+    border: 1px solid #fecaca; 
+}
+
+/* Loading */
+.loading-spinner {
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden { display: none !important; }
+
+/* Back button */
+.back-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.back-btn:hover { color: #1e293b; }
+
+a { color: #2563eb; text-decoration: none; font-weight: 700; }
+a:hover { text-decoration: underline; }
