@@ -1,102 +1,60 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { 
+    getAuth, 
+    signInWithEmailAndPassword, 
+    setPersistence, 
+    browserLocalPersistence, 
+    browserSessionPersistence,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-// SECURITY WARNING: In production, use Firebase Authentication instead of Realtime Database
-// for user management. Storing passwords in Realtime Database is insecure.
 
 const firebaseConfig = {
     apiKey: "AIzaSyDQRKnsV0aFglvXU52V8LkeRmb3godaKyg",
+    authDomain: "rk-tech-eb179.firebaseapp.com",
     databaseURL: "https://rk-tech-eb179-default-rtdb.firebaseio.com",
-    projectId: "rk-tech-eb179"
+    projectId: "rk-tech-eb179",
+    storageBucket: "rk-tech-eb179.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abc123"
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getDatabase(app);
 
 // Security State
 let userTurnstileToken = null;
 let adminTurnstileToken = null;
-let csrfToken = null;
+let loginAttempts = { count: 0, lockedUntil: 0 };
 
-// Rate Limiting Configuration
+// Rate limiting
 const SECURITY = {
-    maxAttempts: 5,
-    lockoutDuration: 300000, // 5 minutes in milliseconds
-    attempts: new Map(), // Store attempts by username/IP (simulated)
+    MAX_ATTEMPTS: 5,
+    LOCKOUT_DURATION: 300000, // 5 minutes
     
-    // Generate CSRF Token
-    generateToken() {
-        const array = new Uint8Array(32);
-        crypto.getRandomValues(array);
-        return btoa(String.fromCharCode.apply(null, array));
-    },
-    
-    // Hash password using SHA-256 (Client-side only - not as secure as bcrypt but better than plaintext)
-    async hashPassword(password) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    },
-    
-    // Check if account is locked
-    isLocked(identifier) {
-        const record = this.attempts.get(identifier);
-        if (!record) return false;
-        
-        if (record.lockedUntil && Date.now() < record.lockedUntil) {
-            const remaining = Math.ceil((record.lockedUntil - Date.now()) / 1000);
-            throw new Error(`Account locked. Try again in ${remaining} seconds.`);
+    isLocked() {
+        if (Date.now() < loginAttempts.lockedUntil) {
+            const remaining = Math.ceil((loginAttempts.lockedUntil - Date.now()) / 1000);
+            throw new Error(`Too many attempts. Wait ${remaining} seconds.`);
         }
-        
-        // Reset if lock expired
-        if (record.lockedUntil && Date.now() >= record.lockedUntil) {
-            this.attempts.delete(identifier);
-            return false;
-        }
-        
+        loginAttempts = { count: 0, lockedUntil: 0 };
         return false;
     },
     
-    // Record failed attempt
-    recordAttempt(identifier) {
-        const now = Date.now();
-        let record = this.attempts.get(identifier) || { count: 0, firstAttempt: now };
-        
-        record.count++;
-        
-        // Reset counter after 15 minutes
-        if (now - record.firstAttempt > 900000) {
-            record = { count: 1, firstAttempt: now };
+    recordFailure() {
+        loginAttempts.count++;
+        if (loginAttempts.count >= this.MAX_ATTEMPTS) {
+            loginAttempts.lockedUntil = Date.now() + this.LOCKOUT_DURATION;
         }
-        
-        // Lock after max attempts
-        if (record.count >= this.maxAttempts) {
-            record.lockedUntil = now + this.lockoutDuration;
-            this.attempts.set(identifier, record);
-            throw new Error(`Too many failed attempts. Account locked for 5 minutes.`);
-        }
-        
-        this.attempts.set(identifier, record);
-        return this.maxAttempts - record.count;
-    },
-    
-    // Clear attempts on successful login
-    clearAttempts(identifier) {
-        this.attempts.delete(identifier);
     }
 };
-
-// Initialize CSRF Token
-csrfToken = SECURITY.generateToken();
-sessionStorage.setItem('csrf_token', csrfToken);
 
 // Turnstile Callbacks
 window.onUserTurnstileSuccess = function(token) {
     userTurnstileToken = token;
     document.getElementById('userLoginBtn').disabled = false;
-    document.getElementById('userBtnText').textContent = 'Secure Login';
+    document.getElementById('userBtnText').textContent = 'Login Securely';
 };
 
 window.onAdminTurnstileSuccess = function(token) {
@@ -105,93 +63,11 @@ window.onAdminTurnstileSuccess = function(token) {
     document.getElementById('adminBtnText').textContent = 'Access Admin Panel';
 };
 
-// Input Sanitization
-function sanitizeInput(input) {
-    if (typeof input !== 'string') return '';
-    return input.trim().replace(/[<>]/g, '').substring(0, 100); // Prevent XSS and limit length
-}
-
-// Validate Email/Username
-function validateIdentifier(identifier) {
-    if (!identifier || identifier.length < 3) {
-        throw new Error('Username must be at least 3 characters');
-    }
-    if (identifier.length > 50) {
-        throw new Error('Username too long');
-    }
-    // Email validation if it contains @
-    if (identifier.includes('@')) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(identifier)) {
-            throw new Error('Invalid email format');
-        }
-    }
-}
-
-// Validate Password
-function validatePassword(password) {
-    if (!password || password.length < 8) {
-        throw new Error('Password must be at least 8 characters');
-    }
-    if (password.length > 128) {
-        throw new Error('Password too long');
-    }
-}
-
-// Secure Session Creation
-function createSecureSession(userData, userKey) {
-    const session = {
-        uid: userKey,
-        username: userData.username,
-        name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-        role: userData.role,
-        email: userData.email,
-        csrf: csrfToken,
-        created: Date.now(),
-        expires: Date.now() + (30 * 60 * 1000) // 30 minutes
-    };
-    
-    // Encrypt session data before storing (basic obfuscation)
-    const sessionString = JSON.stringify(session);
-    sessionStorage.setItem('fleetsync_session', sessionString);
-    sessionStorage.setItem('session_sig', SECURITY.hashPassword(sessionString + csrfToken).slice(0, 16)); // Simple integrity check
-}
-
-// Verify Session Integrity (call this on dashboard load)
-function verifySession() {
-    const session = sessionStorage.getItem('fleetsync_session');
-    const sig = sessionStorage.getItem('session_sig');
-    
-    if (!session || !sig) return false;
-    
-    try {
-        const data = JSON.parse(session);
-        if (Date.now() > data.expires) {
-            clearSession();
-            return false;
-        }
-        // Verify CSRF
-        if (data.csrf !== csrfToken) return false;
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
-
-function clearSession() {
-    sessionStorage.removeItem('fleetsync_session');
-    sessionStorage.removeItem('session_sig');
-}
-
 // UI Functions
 window.showSelection = () => {
     document.getElementById('selectionScreen').classList.remove('hidden');
     document.getElementById('userLoginScreen').classList.add('hidden');
     document.getElementById('adminLoginScreen').classList.add('hidden');
-    
-    // Clear sensitive fields
-    document.getElementById('userPassword').value = '';
-    document.getElementById('adminPassword').value = '';
     
     if (typeof turnstile !== 'undefined') {
         turnstile.reset('#userTurnstile');
@@ -204,196 +80,168 @@ window.showSelection = () => {
 window.showUserLogin = () => {
     document.getElementById('selectionScreen').classList.add('hidden');
     document.getElementById('userLoginScreen').classList.remove('hidden');
-    document.getElementById('userError').classList.add('hidden');
-    document.getElementById('userLoginBtn').disabled = true;
-    document.getElementById('userBtnText').textContent = 'Complete CAPTCHA First';
-    userTurnstileToken = null;
+    clearErrors('user');
+    resetButton('user');
 };
 
 window.showAdminLogin = () => {
     document.getElementById('selectionScreen').classList.add('hidden');
     document.getElementById('adminLoginScreen').classList.remove('hidden');
-    document.getElementById('adminError').classList.add('hidden');
-    document.getElementById('adminLoginBtn').disabled = true;
-    document.getElementById('adminBtnText').textContent = 'Complete CAPTCHA First';
-    adminTurnstileToken = null;
+    clearErrors('admin');
+    resetButton('admin');
 };
 
-// Secure Login Handler
-async function handleSecureLogin(identifier, password, type, btnConfig, turnstileToken) {
-    const { btnId, btnTextId, loaderId, errorId } = btnConfig;
-    const btn = document.getElementById(btnId);
-    const btnText = document.getElementById(btnTextId);
-    const loader = document.getElementById(loaderId);
-    const errorBox = document.getElementById(errorId);
-    
-    // Reset error display
+function clearErrors(type) {
+    const errorBox = document.getElementById(`${type}Error`);
     errorBox.textContent = '';
     errorBox.classList.add('hidden');
+}
+
+function resetButton(type) {
+    const btn = document.getElementById(`${type}LoginBtn`);
+    const btnText = document.getElementById(`${type}BtnText`);
+    btn.disabled = true;
+    btnText.textContent = 'Complete CAPTCHA First';
+}
+
+// Secure Login Handler using Firebase Auth
+async function handleSecureLogin(email, password, type, turnstileToken, rememberMe) {
+    const errorBox = document.getElementById(`${type}Error`);
+    const btn = document.getElementById(`${type}LoginBtn`);
+    const btnText = document.getElementById(`${type}BtnText`);
+    const loader = document.getElementById(`${type}BtnLoader`);
     
     try {
-        // Input validation
-        validateIdentifier(identifier);
-        validatePassword(password);
-        
-        // Rate limiting check
-        SECURITY.isLocked(identifier);
+        // Security checks
+        SECURITY.isLocked();
         
         if (!turnstileToken) {
-            throw new Error('Please complete the human verification');
+            throw new Error('Complete the human verification');
         }
         
-        // CSRF Check
-        const storedToken = sessionStorage.getItem('csrf_token');
-        if (!storedToken || storedToken !== csrfToken) {
-            throw new Error('Security token invalid. Please refresh the page.');
+        if (!email.includes('@')) {
+            throw new Error('Enter a valid email');
         }
         
-        // UI Loading State
+        if (password.length < 6) {
+            throw new Error('Password too short');
+        }
+        
+        // UI Loading
         btn.disabled = true;
-        btnText.textContent = 'Authenticating...';
+        btnText.textContent = 'Verifying...';
         loader.classList.remove('hidden');
+        errorBox.classList.add('hidden');
         
-        // Hash password for comparison (since we're storing hashed passwords now)
-        const hashedPassword = await SECURITY.hashPassword(password);
+        // Set persistence
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         
-        // Fetch users
-        const snapshot = await get(ref(db, 'app_users'));
+        // Firebase Auth Login (Secure!)
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Verify Turnstile (In production, verify server-side)
+        if (!turnstileToken || turnstileToken.length < 10) {
+            await auth.signOut();
+            throw new Error('Invalid verification');
+        }
+        
+        // Check role in Database (now secure with rules)
+        const userRef = ref(db, `app_users/${user.uid}`);
+        const snapshot = await get(userRef);
         
         if (!snapshot.exists()) {
-            throw new Error('Authentication system error');
-        }
-
-        let foundUser = null;
-        let userKey = null;
-
-        snapshot.forEach((child) => {
-            const user = child.val();
-            // Compare hashed passwords
-            if ((user.username === identifier || user.email === identifier) && 
-                user.password === hashedPassword) {
-                foundUser = user;
-                userKey = child.key;
-            }
-        });
-
-        if (!foundUser) {
-            const remaining = SECURITY.recordAttempt(identifier);
-            throw new Error(`Invalid credentials. ${remaining} attempts remaining.`);
+            await auth.signOut();
+            throw new Error('User profile not found');
         }
         
-        if (foundUser.status !== 'active') {
-            throw new Error('Account suspended. Contact administrator.');
+        const userData = snapshot.val();
+        
+        // Verify status
+        if (userData.status !== 'active') {
+            await auth.signOut();
+            throw new Error('Account suspended');
         }
         
-        if (type === 'admin' && foundUser.role !== 'admin') {
-            SECURITY.recordAttempt(identifier);
-            throw new Error('Access denied: Insufficient privileges');
+        // Verify admin role if needed
+        if (type === 'admin' && userData.role !== 'admin') {
+            await auth.signOut();
+            throw new Error('Access denied: Not an admin');
         }
-
-        // Success - Clear attempts
-        SECURITY.clearAttempts(identifier);
         
         // Update last login
-        await set(ref(db, `app_users/${userKey}/lastLogin`), new Date().toISOString());
-        await set(ref(db, `app_users/${userKey}/lastIP`), 'client-side'); // Cannot get real IP client-side
+        await set(ref(db, `app_users/${user.uid}/lastLogin`), new Date().toISOString());
         
         // Create secure session
-        createSecureSession(foundUser, userKey);
+        const sessionData = {
+            uid: user.uid,
+            email: user.email,
+            role: userData.role,
+            name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+            loginTime: Date.now()
+        };
         
-        // Clear password from memory
-        password = null;
-        document.getElementById(type === 'admin' ? 'adminPassword' : 'userPassword').value = '';
+        sessionStorage.setItem('fleetsync_session', JSON.stringify(sessionData));
         
         // Redirect
-        setTimeout(() => {
-            window.location.href = type === 'admin' ? 'dashboard.html?page=admin' : 'dashboard.html';
-        }, 100);
+        window.location.href = type === 'admin' ? 'dashboard.html?page=admin' : 'dashboard.html';
         
     } catch (error) {
-        // Sanitize error message for display (prevent XSS)
-        const safeError = error.message.replace(/[<>]/g, '');
-        errorBox.textContent = safeError;
+        SECURITY.recordFailure();
+        
+        let message = 'Login failed';
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            message = 'Invalid email or password';
+        } else if (error.code === 'auth/too-many-requests') {
+            message = 'Too many attempts. Try again later';
+        } else if (error.code === 'auth/invalid-email') {
+            message = 'Invalid email format';
+        } else if (error.message) {
+            message = error.message;
+        }
+        
+        errorBox.textContent = message;
         errorBox.classList.remove('hidden');
         
         btn.disabled = false;
-        btnText.textContent = type === 'admin' ? 'Access Admin Panel' : 'Secure Login';
+        btnText.textContent = type === 'admin' ? 'Access Admin Panel' : 'Login';
         loader.classList.add('hidden');
         
-        // Reset Turnstile on error to prevent replay
         if (typeof turnstile !== 'undefined') {
             turnstile.reset(type === 'admin' ? '#adminTurnstile' : '#userTurnstile');
         }
     }
 }
 
-// Event Listeners with debouncing
-let isProcessing = false;
-
-document.getElementById('userLoginForm').addEventListener('submit', async (e) => {
+// Event Listeners
+document.getElementById('userLoginForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    if (isProcessing) return;
-    isProcessing = true;
+    const email = document.getElementById('userUsername').value.trim();
+    const password = document.getElementById('userPassword').value;
+    const rememberMe = true; // Default for users
     
-    await handleSecureLogin(
-        sanitizeInput(document.getElementById('userUsername').value),
-        document.getElementById('userPassword').value,
-        'user',
-        {
-            btnId: 'userLoginBtn',
-            btnTextId: 'userBtnText',
-            loaderId: 'userBtnLoader',
-            errorId: 'userError'
-        },
-        userTurnstileToken
-    );
-    
-    setTimeout(() => isProcessing = false, 1000);
+    handleSecureLogin(email, password, 'user', userTurnstileToken, rememberMe);
 });
 
-document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    if (isProcessing) return;
-    isProcessing = true;
+    const email = document.getElementById('adminUsername').value.trim();
+    const password = document.getElementById('adminPassword').value;
+    const rememberMe = false; // Safer for admin
     
-    await handleSecureLogin(
-        sanitizeInput(document.getElementById('adminUsername').value),
-        document.getElementById('adminPassword').value,
-        'admin',
-        {
-            btnId: 'adminLoginBtn',
-            btnTextId: 'adminBtnText',
-            loaderId: 'adminBtnLoader',
-            errorId: 'adminError'
-        },
-        adminTurnstileToken
-    );
-    
-    setTimeout(() => isProcessing = false, 1000);
+    handleSecureLogin(email, password, 'admin', adminTurnstileToken, rememberMe);
 });
 
-// Initialize Icons
+// Auth State Listener
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log('Auth state: Logged in');
+    } else {
+        console.log('Auth state: Logged out');
+    }
+});
+
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-    
-    // Check for existing valid session
-    if (verifySession()) {
-        console.log('Valid session found');
-        // Optionally auto-redirect or show message
-    }
-});
-
-// Security: Clear sensitive data on unload
-window.addEventListener('beforeunload', () => {
-    document.getElementById('userPassword').value = '';
-    document.getElementById('adminPassword').value = '';
-});
-
-// Prevent back button cache (ensure fresh load)
-window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-        window.location.reload();
-    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 });
