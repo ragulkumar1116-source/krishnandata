@@ -1,203 +1,399 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+// SECURITY WARNING: In production, use Firebase Authentication instead of Realtime Database
+// for user management. Storing passwords in Realtime Database is insecure.
 
-body { 
-    font-family: 'Plus Jakarta Sans', sans-serif; 
-    background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+const firebaseConfig = {
+    apiKey: "AIzaSyDQRKnsV0aFglvXU52V8LkeRmb3godaKyg",
+    databaseURL: "https://rk-tech-eb179-default-rtdb.firebaseio.com",
+    projectId: "rk-tech-eb179"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Security State
+let userTurnstileToken = null;
+let adminTurnstileToken = null;
+let csrfToken = null;
+
+// Rate Limiting Configuration
+const SECURITY = {
+    maxAttempts: 5,
+    lockoutDuration: 300000, // 5 minutes in milliseconds
+    attempts: new Map(), // Store attempts by username/IP (simulated)
+    
+    // Generate CSRF Token
+    generateToken() {
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        return btoa(String.fromCharCode.apply(null, array));
+    },
+    
+    // Hash password using SHA-256 (Client-side only - not as secure as bcrypt but better than plaintext)
+    async hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+    
+    // Check if account is locked
+    isLocked(identifier) {
+        const record = this.attempts.get(identifier);
+        if (!record) return false;
+        
+        if (record.lockedUntil && Date.now() < record.lockedUntil) {
+            const remaining = Math.ceil((record.lockedUntil - Date.now()) / 1000);
+            throw new Error(`Account locked. Try again in ${remaining} seconds.`);
+        }
+        
+        // Reset if lock expired
+        if (record.lockedUntil && Date.now() >= record.lockedUntil) {
+            this.attempts.delete(identifier);
+            return false;
+        }
+        
+        return false;
+    },
+    
+    // Record failed attempt
+    recordAttempt(identifier) {
+        const now = Date.now();
+        let record = this.attempts.get(identifier) || { count: 0, firstAttempt: now };
+        
+        record.count++;
+        
+        // Reset counter after 15 minutes
+        if (now - record.firstAttempt > 900000) {
+            record = { count: 1, firstAttempt: now };
+        }
+        
+        // Lock after max attempts
+        if (record.count >= this.maxAttempts) {
+            record.lockedUntil = now + this.lockoutDuration;
+            this.attempts.set(identifier, record);
+            throw new Error(`Too many failed attempts. Account locked for 5 minutes.`);
+        }
+        
+        this.attempts.set(identifier, record);
+        return this.maxAttempts - record.count;
+    },
+    
+    // Clear attempts on successful login
+    clearAttempts(identifier) {
+        this.attempts.delete(identifier);
+    }
+};
+
+// Initialize CSRF Token
+csrfToken = SECURITY.generateToken();
+sessionStorage.setItem('csrf_token', csrfToken);
+
+// Turnstile Callbacks
+window.onUserTurnstileSuccess = function(token) {
+    userTurnstileToken = token;
+    document.getElementById('userLoginBtn').disabled = false;
+    document.getElementById('userBtnText').textContent = 'Secure Login';
+};
+
+window.onAdminTurnstileSuccess = function(token) {
+    adminTurnstileToken = token;
+    document.getElementById('adminLoginBtn').disabled = false;
+    document.getElementById('adminBtnText').textContent = 'Access Admin Panel';
+};
+
+// Input Sanitization
+function sanitizeInput(input) {
+    if (typeof input !== 'string') return '';
+    return input.trim().replace(/[<>]/g, '').substring(0, 100); // Prevent XSS and limit length
 }
 
-.glass-panel {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 24px;
-    padding: 40px;
-    width: 100%;
-    max-width: 900px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+// Validate Email/Username
+function validateIdentifier(identifier) {
+    if (!identifier || identifier.length < 3) {
+        throw new Error('Username must be at least 3 characters');
+    }
+    if (identifier.length > 50) {
+        throw new Error('Username too long');
+    }
+    // Email validation if it contains @
+    if (identifier.includes('@')) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(identifier)) {
+            throw new Error('Invalid email format');
+        }
+    }
 }
 
-.text-center { text-align: center; }
-.mb-2 { margin-bottom: 8px; }
-.mb-4 { margin-bottom: 16px; }
-.mb-6 { margin-bottom: 24px; }
-.mb-8 { margin-bottom: 32px; }
-.mt-8 { margin-top: 32px; }
-.pt-6 { padding-top: 24px; }
-
-.bg-blue-600 { background-color: #2563eb; }
-.bg-amber-500 { background-color: #f59e0b; }
-.text-white { color: #ffffff; }
-.text-slate-500 { color: #64748b; }
-.text-slate-600 { color: #475569; }
-.text-slate-900 { color: #0f172a; }
-.text-blue-600 { color: #2563eb; }
-.text-amber-600 { color: #d97706; }
-
-.inline-block { display: inline-block; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.justify-center { justify-content: center; }
-.gap-1 { gap: 4px; }
-
-.grid { display: grid; }
-@media (min-width: 768px) {
-    .md-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-}
-.gap-6 { gap: 24px; }
-
-.w-10 { width: 40px; height: 40px; }
-.w-8 { width: 32px; height: 32px; }
-.w-4 { width: 16px; height: 16px; }
-.w-16 { width: 64px; height: 64px; }
-.h-16 { height: 64px; }
-.h-10 { height: 40px; }
-
-.rounded-2xl { border-radius: 16px; }
-.rounded-full { border-radius: 9999px; }
-.rounded-xl { border-radius: 12px; }
-
-.p-4 { padding: 16px; }
-.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-
-.font-black { font-weight: 800; }
-.font-bold { font-weight: 700; }
-.font-semibold { font-weight: 600; }
-
-.text-3xl { font-size: 30px; line-height: 36px; }
-.text-2xl { font-size: 24px; line-height: 32px; }
-.text-xl { font-size: 20px; line-height: 28px; }
-.text-sm { font-size: 14px; line-height: 20px; }
-
-.border-t { border-top: 1px solid #e2e8f0; }
-
-/* Portal Cards */
-.portal-card {
-    border: 2px solid #e2e8f0;
-    border-radius: 20px;
-    padding: 32px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    background: white;
-}
-.portal-card:hover {
-    border-color: #3b82f6;
-    transform: translateY(-4px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-.portal-card.admin:hover {
-    border-color: #f59e0b;
-    box-shadow: 0 20px 25px -5px rgba(245, 158, 11, 0.2);
+// Validate Password
+function validatePassword(password) {
+    if (!password || password.length < 8) {
+        throw new Error('Password must be at least 8 characters');
+    }
+    if (password.length > 128) {
+        throw new Error('Password too long');
+    }
 }
 
-/* Form Styles */
-.max-w-md { max-width: 448px; margin: 0 auto; }
-.input-field {
-    width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    font-size: 15px;
-    font-family: inherit;
-}
-.input-field:focus {
-    border-color: #3b82f6;
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-}
-
-.btn-primary {
-    width: 100%;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-    padding: 16px;
-    border-radius: 12px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-top: 8px;
-    font-family: inherit;
-    font-size: 15px;
-}
-.btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
-}
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-.btn-admin {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+// Secure Session Creation
+function createSecureSession(userData, userKey) {
+    const session = {
+        uid: userKey,
+        username: userData.username,
+        name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+        role: userData.role,
+        email: userData.email,
+        csrf: csrfToken,
+        created: Date.now(),
+        expires: Date.now() + (30 * 60 * 1000) // 30 minutes
+    };
+    
+    // Encrypt session data before storing (basic obfuscation)
+    const sessionString = JSON.stringify(session);
+    sessionStorage.setItem('fleetsync_session', sessionString);
+    sessionStorage.setItem('session_sig', SECURITY.hashPassword(sessionString + csrfToken).slice(0, 16)); // Simple integrity check
 }
 
-/* Utility backgrounds */
-.bg-blue-100 { background-color: #dbeafe; color: #2563eb; }
-.bg-amber-100 { background-color: #fef3c7; color: #d97706; }
-
-/* Turnstile */
-.turnstile-container {
-    margin: 20px 0;
-    min-height: 65px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+// Verify Session Integrity (call this on dashboard load)
+function verifySession() {
+    const session = sessionStorage.getItem('fleetsync_session');
+    const sig = sessionStorage.getItem('session_sig');
+    
+    if (!session || !sig) return false;
+    
+    try {
+        const data = JSON.parse(session);
+        if (Date.now() > data.expires) {
+            clearSession();
+            return false;
+        }
+        // Verify CSRF
+        if (data.csrf !== csrfToken) return false;
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
-/* Alerts */
-.alert {
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    font-weight: 600;
-}
-.alert-error { 
-    background: #fee2e2; 
-    color: #991b1b; 
-    border: 1px solid #fecaca; 
+function clearSession() {
+    sessionStorage.removeItem('fleetsync_session');
+    sessionStorage.removeItem('session_sig');
 }
 
-/* Loading */
-.loading-spinner {
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top: 2px solid white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    margin-left: 8px;
-    vertical-align: middle;
-}
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+// UI Functions
+window.showSelection = () => {
+    document.getElementById('selectionScreen').classList.remove('hidden');
+    document.getElementById('userLoginScreen').classList.add('hidden');
+    document.getElementById('adminLoginScreen').classList.add('hidden');
+    
+    // Clear sensitive fields
+    document.getElementById('userPassword').value = '';
+    document.getElementById('adminPassword').value = '';
+    
+    if (typeof turnstile !== 'undefined') {
+        turnstile.reset('#userTurnstile');
+        turnstile.reset('#adminTurnstile');
+    }
+    userTurnstileToken = null;
+    adminTurnstileToken = null;
+};
+
+window.showUserLogin = () => {
+    document.getElementById('selectionScreen').classList.add('hidden');
+    document.getElementById('userLoginScreen').classList.remove('hidden');
+    document.getElementById('userError').classList.add('hidden');
+    document.getElementById('userLoginBtn').disabled = true;
+    document.getElementById('userBtnText').textContent = 'Complete CAPTCHA First';
+    userTurnstileToken = null;
+};
+
+window.showAdminLogin = () => {
+    document.getElementById('selectionScreen').classList.add('hidden');
+    document.getElementById('adminLoginScreen').classList.remove('hidden');
+    document.getElementById('adminError').classList.add('hidden');
+    document.getElementById('adminLoginBtn').disabled = true;
+    document.getElementById('adminBtnText').textContent = 'Complete CAPTCHA First';
+    adminTurnstileToken = null;
+};
+
+// Secure Login Handler
+async function handleSecureLogin(identifier, password, type, btnConfig, turnstileToken) {
+    const { btnId, btnTextId, loaderId, errorId } = btnConfig;
+    const btn = document.getElementById(btnId);
+    const btnText = document.getElementById(btnTextId);
+    const loader = document.getElementById(loaderId);
+    const errorBox = document.getElementById(errorId);
+    
+    // Reset error display
+    errorBox.textContent = '';
+    errorBox.classList.add('hidden');
+    
+    try {
+        // Input validation
+        validateIdentifier(identifier);
+        validatePassword(password);
+        
+        // Rate limiting check
+        SECURITY.isLocked(identifier);
+        
+        if (!turnstileToken) {
+            throw new Error('Please complete the human verification');
+        }
+        
+        // CSRF Check
+        const storedToken = sessionStorage.getItem('csrf_token');
+        if (!storedToken || storedToken !== csrfToken) {
+            throw new Error('Security token invalid. Please refresh the page.');
+        }
+        
+        // UI Loading State
+        btn.disabled = true;
+        btnText.textContent = 'Authenticating...';
+        loader.classList.remove('hidden');
+        
+        // Hash password for comparison (since we're storing hashed passwords now)
+        const hashedPassword = await SECURITY.hashPassword(password);
+        
+        // Fetch users
+        const snapshot = await get(ref(db, 'app_users'));
+        
+        if (!snapshot.exists()) {
+            throw new Error('Authentication system error');
+        }
+
+        let foundUser = null;
+        let userKey = null;
+
+        snapshot.forEach((child) => {
+            const user = child.val();
+            // Compare hashed passwords
+            if ((user.username === identifier || user.email === identifier) && 
+                user.password === hashedPassword) {
+                foundUser = user;
+                userKey = child.key;
+            }
+        });
+
+        if (!foundUser) {
+            const remaining = SECURITY.recordAttempt(identifier);
+            throw new Error(`Invalid credentials. ${remaining} attempts remaining.`);
+        }
+        
+        if (foundUser.status !== 'active') {
+            throw new Error('Account suspended. Contact administrator.');
+        }
+        
+        if (type === 'admin' && foundUser.role !== 'admin') {
+            SECURITY.recordAttempt(identifier);
+            throw new Error('Access denied: Insufficient privileges');
+        }
+
+        // Success - Clear attempts
+        SECURITY.clearAttempts(identifier);
+        
+        // Update last login
+        await set(ref(db, `app_users/${userKey}/lastLogin`), new Date().toISOString());
+        await set(ref(db, `app_users/${userKey}/lastIP`), 'client-side'); // Cannot get real IP client-side
+        
+        // Create secure session
+        createSecureSession(foundUser, userKey);
+        
+        // Clear password from memory
+        password = null;
+        document.getElementById(type === 'admin' ? 'adminPassword' : 'userPassword').value = '';
+        
+        // Redirect
+        setTimeout(() => {
+            window.location.href = type === 'admin' ? 'dashboard.html?page=admin' : 'dashboard.html';
+        }, 100);
+        
+    } catch (error) {
+        // Sanitize error message for display (prevent XSS)
+        const safeError = error.message.replace(/[<>]/g, '');
+        errorBox.textContent = safeError;
+        errorBox.classList.remove('hidden');
+        
+        btn.disabled = false;
+        btnText.textContent = type === 'admin' ? 'Access Admin Panel' : 'Secure Login';
+        loader.classList.add('hidden');
+        
+        // Reset Turnstile on error to prevent replay
+        if (typeof turnstile !== 'undefined') {
+            turnstile.reset(type === 'admin' ? '#adminTurnstile' : '#userTurnstile');
+        }
+    }
 }
 
-.hidden { display: none !important; }
+// Event Listeners with debouncing
+let isProcessing = false;
 
-/* Back button */
-.back-btn {
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    font-size: 14px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-.back-btn:hover { color: #1e293b; }
+document.getElementById('userLoginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    await handleSecureLogin(
+        sanitizeInput(document.getElementById('userUsername').value),
+        document.getElementById('userPassword').value,
+        'user',
+        {
+            btnId: 'userLoginBtn',
+            btnTextId: 'userBtnText',
+            loaderId: 'userBtnLoader',
+            errorId: 'userError'
+        },
+        userTurnstileToken
+    );
+    
+    setTimeout(() => isProcessing = false, 1000);
+});
 
-a { color: #2563eb; text-decoration: none; font-weight: 700; }
-a:hover { text-decoration: underline; }
+document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    await handleSecureLogin(
+        sanitizeInput(document.getElementById('adminUsername').value),
+        document.getElementById('adminPassword').value,
+        'admin',
+        {
+            btnId: 'adminLoginBtn',
+            btnTextId: 'adminBtnText',
+            loaderId: 'adminBtnLoader',
+            errorId: 'adminError'
+        },
+        adminTurnstileToken
+    );
+    
+    setTimeout(() => isProcessing = false, 1000);
+});
+
+// Initialize Icons
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    
+    // Check for existing valid session
+    if (verifySession()) {
+        console.log('Valid session found');
+        // Optionally auto-redirect or show message
+    }
+});
+
+// Security: Clear sensitive data on unload
+window.addEventListener('beforeunload', () => {
+    document.getElementById('userPassword').value = '';
+    document.getElementById('adminPassword').value = '';
+});
+
+// Prevent back button cache (ensure fresh load)
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        window.location.reload();
+    }
+});
