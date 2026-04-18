@@ -3,50 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Updated CSP to include unpkg.com -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.gstatic.com https://*.googleapis.com https://unpkg.com https://challenges.cloudflare.com 'unsafe-inline'; connect-src https://*.googleapis.com https://*.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com;">
-    <title>FleetSync Pro | Secure Portal</title>
+    <title>FleetSync Pro | Select Portal</title>
     
     <!-- External Libraries -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Rate Limit Overlay -->
-    <div id="rateLimitOverlay" class="rate-limit-overlay hidden">
-        <div>
-            <i data-lucide="clock" style="width: 48px; height: 48px; margin-bottom: 16px;"></i>
-            <h2>Too Many Attempts</h2>
-            <p>Please wait <span id="countdown">30</span> seconds before trying again.</p>
-        </div>
-    </div>
-
     <div class="glass-panel">
         <!-- Selection Screen -->
         <div id="selectionScreen">
             <div class="text-center mb-8">
                 <div class="bg-blue-600 p-4 rounded-2xl text-white inline-block mb-4 shadow-lg">
-                    <i data-lucide="shield-check" class="w-10 h-10"></i>
+                    <i data-lucide="activity" class="w-10 h-10"></i>
                 </div>
                 <h1 class="text-3xl font-black text-slate-900 mb-2">FleetSync Pro</h1>
-                <p class="text-slate-500">Secure Access Portal</p>
-            </div>
-
-            <div id="authWarning" class="alert alert-warning hidden mb-6">
-                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                <span>Session expired. Please login again.</span>
+                <p class="text-slate-500">Select your access portal</p>
             </div>
 
             <div class="grid md-grid-cols-2 gap-6">
-                <div class="portal-card" onclick="showUserLogin()" id="userCard">
+                <div class="portal-card" onclick="showUserLogin()">
                     <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
                     </div>
@@ -55,7 +37,7 @@
                     <span class="text-blue-600 font-semibold text-sm">Access Dashboard →</span>
                 </div>
 
-                <div class="portal-card admin" onclick="showAdminLogin()" id="adminCard">
+                <div class="portal-card admin" onclick="showAdminLogin()">
                     <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="shield" class="w-8 h-8"></i>
                     </div>
@@ -65,15 +47,14 @@
                 </div>
             </div>
 
-            <div class="mt-8 pt-6 text-center border-t">
-                <p class="text-sm text-slate-600 mb-2">Don't have an account? <a href="register.html">Request Access</a></p>
-                <p class="text-xs text-slate-400">Protected by Cloudflare Turnstile & Firebase Auth</p>
+            <div class="mt-8 pt-6 text-center">
+                <p class="text-sm text-slate-600">Don't have an account? <a href="register.html">Request Access</a></p>
             </div>
         </div>
 
         <!-- User Login -->
         <div id="userLoginScreen" class="hidden max-w-md">
-            <button class="back-btn" onclick="showSelection()" type="button">
+            <button class="back-btn" onclick="showSelection()">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
             </button>
             
@@ -82,46 +63,19 @@
                     <i data-lucide="layout-dashboard" class="w-8 h-8"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-900">User Login</h2>
-                <p class="text-sm text-slate-500 mt-2">Enter your credentials securely</p>
             </div>
 
             <div id="userError" class="hidden alert alert-error"></div>
 
-            <form id="userLoginForm" autocomplete="off">
-                <div class="input-group">
-                    <input type="email" 
-                           id="userEmail" 
-                           class="input-field" 
-                           placeholder="Email address" 
-                           required 
-                           autocomplete="off"
-                           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
-                </div>
-                
-                <div class="input-group">
-                    <input type="password" 
-                           id="userPassword" 
-                           class="input-field" 
-                           placeholder="Password" 
-                           required
-                           minlength="8"
-                           autocomplete="new-password">
-                    <button type="button" class="password-toggle" onclick="togglePassword('userPassword')">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <div class="checkbox-group">
-                    <input type="checkbox" id="userRemember" checked>
-                    <label for="userRemember">Remember this device for 30 days</label>
-                </div>
+            <form id="userLoginForm">
+                <input type="text" id="userUsername" class="input-field" placeholder="Username" required>
+                <input type="password" id="userPassword" class="input-field" placeholder="Password" required>
                 
                 <div class="turnstile-container">
                     <div class="cf-turnstile" 
                          data-sitekey="0x4AAAAAAC_BjsQtA7pfoO_G" 
                          data-callback="onUserTurnstileSuccess"
                          data-theme="light"
-                         data-size="normal"
                          id="userTurnstile"></div>
                 </div>
                 
@@ -129,16 +83,12 @@
                     <span id="userBtnText">Complete CAPTCHA First</span>
                     <span id="userBtnLoader" class="loading-spinner hidden"></span>
                 </button>
-                
-                <div class="mt-4 text-center">
-                    <a href="#" onclick="showForgotPassword('user'); return false;" class="text-sm">Forgot password?</a>
-                </div>
             </form>
         </div>
 
         <!-- Admin Login -->
         <div id="adminLoginScreen" class="hidden max-w-md">
-            <button class="back-btn" onclick="showSelection()" type="button">
+            <button class="back-btn" onclick="showSelection()">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
             </button>
             
@@ -147,46 +97,19 @@
                     <i data-lucide="shield-check" class="w-8 h-8"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-900">Admin Login</h2>
-                <p class="text-sm text-slate-500 mt-2">Restricted access - Authorized personnel only</p>
             </div>
 
             <div id="adminError" class="hidden alert alert-error"></div>
 
-            <form id="adminLoginForm" autocomplete="off">
-                <div class="input-group">
-                    <input type="email" 
-                           id="adminEmail" 
-                           class="input-field" 
-                           placeholder="Admin Email" 
-                           required
-                           autocomplete="off"
-                           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
-                </div>
-                
-                <div class="input-group">
-                    <input type="password" 
-                           id="adminPassword" 
-                           class="input-field" 
-                           placeholder="Admin Password" 
-                           required
-                           minlength="12"
-                           autocomplete="new-password">
-                    <button type="button" class="password-toggle" onclick="togglePassword('adminPassword')">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <div class="checkbox-group">
-                    <input type="checkbox" id="adminRemember">
-                    <label for="adminRemember">Remember this device (not recommended for shared computers)</label>
-                </div>
+            <form id="adminLoginForm">
+                <input type="text" id="adminUsername" class="input-field" placeholder="Admin Username" required>
+                <input type="password" id="adminPassword" class="input-field" placeholder="Admin Password" required>
                 
                 <div class="turnstile-container">
                     <div class="cf-turnstile" 
                          data-sitekey="0x4AAAAAAC_BjsQtA7pfoO_G" 
                          data-callback="onAdminTurnstileSuccess"
                          data-theme="light"
-                         data-size="normal"
                          id="adminTurnstile"></div>
                 </div>
                 
@@ -194,15 +117,10 @@
                     <span id="adminBtnText">Complete CAPTCHA First</span>
                     <span id="adminBtnLoader" class="loading-spinner hidden"></span>
                 </button>
-                
-                <div class="mt-4 text-center">
-                    <a href="#" onclick="showForgotPassword('admin'); return false;" class="text-sm">Reset admin access?</a>
-                </div>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript Module -->
     <script type="module" src="auth.js"></script>
 </body>
 </html>
